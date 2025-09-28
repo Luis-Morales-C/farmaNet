@@ -194,24 +194,18 @@ export const adminApi = {
     ]
   },
 
-  async getCategories(): Promise<Category[]> {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    return [
-      {
-        id: "1",
-        name: "Medicamentos",
-        description: "Medicamentos de venta libre y con receta",
-        productCount: 45,
-        status: "active",
-      },
-      {
-        id: "2",
-        name: "Vitaminas",
-        description: "Suplementos vitamínicos y nutricionales",
-        productCount: 28,
-        status: "active",
-      },
-    ]
+ async getCategories(): Promise<Category[]> {
+  const response = await fetch('http://localhost:8080/api/categorias/obtener')
+  if (!response.ok) throw new Error('Error al cargar categorías')
+  const data = await response.json()
+  
+  return data.map((cat: any) => ({
+    id: cat.id,
+    name: cat.nombre,  // Mapear nombre del backend a name del frontend
+    description: cat.descripcion || '',
+    productCount: 0,
+    status: "active" as const
+   }))
   },
 
   async getPromotions(): Promise<Promotion[]> {
@@ -232,7 +226,7 @@ export const adminApi = {
   },
   
  async createProduct(product: ProductoForm) {
-    const res = await fetch("http://localhost:8080/api/productos", {
+    const res = await fetch("http://localhost:8080/api/productos/crear", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(product),

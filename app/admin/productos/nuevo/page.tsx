@@ -119,8 +119,8 @@ const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
           >
             <option value="">Selecciona una categoría</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
+            <option key={c.id} value={c.id}>{c.name}</option>  
+           ))}
           </select>
 
           {/* Precio */}
