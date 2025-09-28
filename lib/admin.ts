@@ -1,3 +1,4 @@
+
 export interface AdminStats {
   totalProducts: number
   totalUsers: number
@@ -70,7 +71,37 @@ export interface Promotion {
   status: "active" | "inactive"
   applicableProducts: string[]
 }
-
+export interface ProductoForm {
+  nombre: string
+  descripcion: string
+  precio: number
+  precioOferta?: number
+  enOferta?: boolean
+  categoria: { id: string }
+  imagenUrl: string
+  stock: number
+  activo: boolean
+  laboratorio?: string
+  principioActivo?: string
+  codigoBarras?: string
+  requiereReceta?: boolean
+}
+// Frontend product form (coincide con tu backend)
+export interface ProductoForm {
+  nombre: string
+  descripcion: string
+  precio: number
+  precioOferta?: number
+  enOferta?: boolean
+  categoria: { id: string }
+  imagenUrl: string
+  stock: number
+  activo: boolean
+  laboratorio?: string
+  principioActivo?: string
+  codigoBarras?: string
+  requiereReceta?: boolean
+}
 // Mock API functions
 export const adminApi = {
   async getStats(): Promise<AdminStats> {
@@ -198,5 +229,15 @@ export const adminApi = {
         applicableProducts: ["2", "3", "4"],
       },
     ]
+  },
+  
+ async createProduct(product: ProductoForm) {
+    const res = await fetch("http://localhost:8080/api/productos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product),
+    })
+    if (!res.ok) throw new Error("Error al crear el producto")
+    return res.json()
   },
 }

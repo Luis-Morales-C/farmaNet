@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth"
 import { adminApi, type AdminProduct } from "@/lib/admin"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,10 +16,12 @@ import Link from "next/link"
 
 export default function AdminProducts() {
   const { user } = useAuth()
+  const router = useRouter()
   const [products, setProducts] = useState<AdminProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
+  // Carga inicial de productos
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -36,11 +39,20 @@ export default function AdminProducts() {
     }
   }, [user])
 
+  // Filtrado de productos
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  // Función para redirigir a agregar producto
+  const handleAddProduct = () => {
+    router.push("/admin/productos/nuevo")
+  }
+
+/**
+ * 
 
   if (!user || user.role !== "admin") {
     return (
@@ -59,22 +71,23 @@ export default function AdminProducts() {
         </Card>
       </div>
     )
-  }
+  } */
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Productos</h1>
           <p className="text-gray-600">Administra el inventario de tu farmacia</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={handleAddProduct}>
           <Plus className="h-4 w-4" />
           Agregar Producto
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -95,7 +108,7 @@ export default function AdminProducts() {
         </CardContent>
       </Card>
 
-      {/* Products Table */}
+      {/* Tabla de productos */}
       <Card>
         <CardHeader>
           <CardTitle>Productos ({filteredProducts.length})</CardTitle>
@@ -133,7 +146,9 @@ export default function AdminProducts() {
                         </div>
                         <div>
                           <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">{product.description.substring(0, 50)}...</div>
+                          <div className="text-sm text-muted-foreground">
+                            {product.description.substring(0, 50)}...
+                          </div>
                         </div>
                       </div>
                     </TableCell>
