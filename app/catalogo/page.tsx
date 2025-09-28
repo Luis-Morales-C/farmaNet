@@ -14,12 +14,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/products/product-card"
-import { type Producto, type Categoria, productService } from "@/lib/products"
+import { productService, type Producto, type CategoriaDTO } from "@/lib/products"
 
 export default function CatalogoPage() {
   const [productos, setProductos] = useState<Producto[]>([])
-  const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [categorias, setCategorias] = useState<CategoriaDTO[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
   // Filters
@@ -30,23 +31,51 @@ export default function CatalogoPage() {
   const [ordenarPor, setOrdenarPor] = useState<"precio-asc" | "precio-desc" | "nombre" | "rating">("nombre")
 
   useEffect(() => {
-    loadData()
+    loadInitialData()
   }, [])
 
   useEffect(() => {
-    loadProductos()
-  }, [busqueda, categoriaSeleccionada, rangoPrecios, soloSinReceta, ordenarPor])
+    if (!isLoading) {
+      loadProductos()
+    }
+  }, [busqueda, categoriaSeleccionada, rangoPrecios, soloSinReceta, ordenarPor, isLoading])
 
-  const loadData = async () => {
+  const loadInitialData = async () => {
     try {
-      const [productosData, categoriasData] = await Promise.all([
-        productService.getProductos(),
-        productService.getCategorias(),
+      setIsLoading(true)
+      setError(null)
+      
+      console.log('Cargando datos iniciales...')
+      
+      // Cargar categorías y productos iniciales
+      const [categoriasData, productosData] = await Promise.all([
+        productService.getCategorias().catch(err => {
+          console.error('Error cargando categorías:', err)
+          return []
+        }),
+        productService.getProductos({ activo: true }).catch(err => {
+          console.error('Error cargando productos:', err)
+          return []
+        })
       ])
-      setProductos(productosData)
+
+      console.log('Categorías cargadas:', categoriasData)
+      console.log('Productos cargados:', productosData)
+
       setCategorias(categoriasData)
+      setProductos(productosData)
+      
+      // Calcular el rango de precios basado en los productos reales
+      if (productosData.length > 0) {
+        const precios = productosData.map(p => p.precio)
+        const minPrecio = Math.floor(Math.min(...precios))
+        const maxPrecio = Math.ceil(Math.max(...precios))
+        setRangoPrecios([minPrecio, maxPrecio])
+      }
+
     } catch (error) {
-      console.error("Error loading data:", error)
+      console.error("Error loading initial data:", error)
+      setError('Error al cargar los datos. Por favor, recarga la página.')
     } finally {
       setIsLoading(false)
     }
@@ -54,27 +83,48 @@ export default function CatalogoPage() {
 
   const loadProductos = async () => {
     try {
+      console.log('Aplicando filtros:', {
+        busqueda,
+        categoriaSeleccionada,
+        rangoPrecios,
+        soloSinReceta,
+        ordenarPor
+      })
+
       const filters = {
-        busqueda: busqueda || undefined,
-        categoria: categoriaSeleccionada || undefined,
+        busqueda: busqueda.trim() || undefined,
+        categoriaId: categoriaSeleccionada || undefined,
         precioMin: rangoPrecios[0],
         precioMax: rangoPrecios[1],
         requiereReceta: soloSinReceta ? false : undefined,
+        activo: true, // Solo productos activos
         ordenarPor,
       }
+
       const data = await productService.getProductos(filters)
+      console.log('Productos filtrados:', data)
       setProductos(data)
+      setError(null)
     } catch (error) {
-      console.error("Error loading products:", error)
+      console.error("Error loading filtered products:", error)
+      setError('Error al cargar los productos filtrados.')
     }
   }
 
   const clearFilters = () => {
     setBusqueda("")
     setCategoriaSeleccionada("")
-    setRangoPrecios([0, 100])
     setSoloSinReceta(false)
     setOrdenarPor("nombre")
+    // Resetear rango de precios a los valores originales
+    if (productos.length > 0) {
+      const precios = productos.map(p => p.precio)
+      const minPrecio = Math.floor(Math.min(...precios))
+      const maxPrecio = Math.ceil(Math.max(...precios))
+      setRangoPrecios([minPrecio, maxPrecio])
+    } else {
+      setRangoPrecios([0, 100])
+    }
   }
 
   const FiltersContent = () => (
@@ -82,7 +132,7 @@ export default function CatalogoPage() {
       {/* Categories */}
       <div>
         <h3 className="font-semibold mb-3">Categorías</h3>
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-48 overflow-y-auto">
           <div className="flex items-center space-x-2">
             <Checkbox
               id="todas-categorias"
@@ -101,7 +151,7 @@ export default function CatalogoPage() {
                 onCheckedChange={() => setCategoriaSeleccionada(categoria.id)}
               />
               <Label htmlFor={categoria.id} className="text-sm">
-                {categoria.nombre} ({categoria.productCount})
+                {categoria.nombre}
               </Label>
             </div>
           ))}
@@ -112,7 +162,13 @@ export default function CatalogoPage() {
       <div>
         <h3 className="font-semibold mb-3">Rango de Precios</h3>
         <div className="space-y-3">
-          <Slider value={rangoPrecios} onValueChange={setRangoPrecios} max={100} step={5} className="w-full" />
+          <Slider 
+            value={rangoPrecios} 
+            onValueChange={setRangoPrecios} 
+            max={rangoPrecios[1] > 100 ? rangoPrecios[1] : 100} 
+            step={1} 
+            className="w-full" 
+          />
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>${rangoPrecios[0]}</span>
             <span>${rangoPrecios[1]}</span>
@@ -150,6 +206,21 @@ export default function CatalogoPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Cargando productos...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={loadInitialData}>Reintentar</Button>
           </div>
         </main>
         <Footer />
@@ -259,7 +330,7 @@ export default function CatalogoPage() {
                   {productos.length !== 1 ? "s" : ""}
                 </p>
                 {(busqueda || categoriaSeleccionada || soloSinReceta) && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-muted-foreground">Filtros activos:</span>
                     {busqueda && (
                       <Badge variant="secondary" className="text-xs">
@@ -287,8 +358,15 @@ export default function CatalogoPage() {
                     <Search className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">No se encontraron productos</h3>
-                  <p className="text-muted-foreground mb-4">Intenta ajustar tus filtros o términos de búsqueda</p>
-                  <Button onClick={clearFilters}>Limpiar Filtros</Button>
+                  <p className="text-muted-foreground mb-4">
+                    {busqueda || categoriaSeleccionada || soloSinReceta 
+                      ? 'Intenta ajustar tus filtros o términos de búsqueda'
+                      : 'No hay productos disponibles en este momento'
+                    }
+                  </p>
+                  {(busqueda || categoriaSeleccionada || soloSinReceta) && (
+                    <Button onClick={clearFilters}>Limpiar Filtros</Button>
+                  )}
                 </div>
               ) : (
                 <div
