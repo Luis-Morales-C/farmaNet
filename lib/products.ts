@@ -15,7 +15,7 @@ export interface Producto {
   principioActivo?: string
   codigoBarras?: string
   enOferta?: boolean
-  // Campos adicionales para compatibilidad con el frontend existente
+
   categoria: {
     id: string
     nombre: string
@@ -26,7 +26,7 @@ export interface Producto {
   tags: string[]
   presentacion: string
   fechaVencimiento: string
-  // Campos adicionales para la página de producto individual
+
   imagen: string
   ingredienteActivo?: string
   instrucciones?: string
@@ -43,7 +43,7 @@ export interface CategoriaDTO {
   esCategoriaRaiz: boolean
   categoriaPadreId?: string
   categoriaPadreNombre?: string
-  // Para compatibilidad con el frontend existente
+
   productCount: number
 }
 
@@ -57,7 +57,7 @@ export interface ProductoFiltros {
   ordenarPor?: "precio-asc" | "precio-desc" | "nombre" | "rating"
 }
 
-// Funciones helper fuera del objeto para evitar problemas con 'this'
+
 const generarTags = (dto: any): string[] => {
   const tags: string[] = []
   
@@ -67,14 +67,14 @@ const generarTags = (dto: any): string[] => {
   if (dto.enOferta) tags.push('Oferta Especial')
   if (dto.categoriaNombre) tags.push(dto.categoriaNombre)
   
-  // Añadir tags adicionales según el contexto
+
   if (dto.nombre?.toLowerCase().includes('paracetamol')) tags.push('Analgésico', 'Antipirético')
   if (dto.nombre?.toLowerCase().includes('ibuprofeno')) tags.push('Antiinflamatorio', 'Analgésico')
   if (dto.nombre?.toLowerCase().includes('vitamina')) tags.push('Suplemento', 'Vitaminas')
   if (dto.nombre?.toLowerCase().includes('jarabe')) tags.push('Jarabe')
   if (dto.nombre?.toLowerCase().includes('tableta') || dto.nombre?.toLowerCase().includes('comprimido')) tags.push('Tabletas')
   
-  return tags.slice(0, 5) // Máximo 5 tags
+  return tags.slice(0, 5) 
 }
 
 const generarInstrucciones = (dto: any): string => {
@@ -117,9 +117,9 @@ const generarContraindicaciones = (dto: any): string => {
   return contraindicaciones
 }
 
-// services/productService.ts
+
 export const productService = {
-  // Obtener productos con filtros
+
   async getProductos(filtros?: ProductoFiltros): Promise<Producto[]> {
     try {
       const params = new URLSearchParams()
@@ -132,8 +132,9 @@ export const productService = {
       if (filtros?.activo !== undefined) params.append('activo', filtros.activo.toString())
       if (filtros?.ordenarPor) params.append('ordenarPor', filtros.ordenarPor)
 
-      const url = `http://localhost:8080/api/productos${params.toString() ? '?' + params.toString() : ''}`
-      console.log('Fetching products from:', url) // Para debug
+  
+      const url = `http://localhost:8080/api/productos/obtener-productos${params.toString() ? '?' + params.toString() : ''}`
+      console.log('Fetching products from:', url)
       
       const response = await fetch(url, {
         method: 'GET',
@@ -147,7 +148,7 @@ export const productService = {
       }
       
       const data = await response.json()
-      console.log('Products received:', data) // Para debug
+      console.log('Products received:', data)
       
       return data.map(this.mapearProductoDTO)
     } catch (error) {
@@ -156,12 +157,12 @@ export const productService = {
     }
   },
 
-  // Obtener UN producto por ID (para la página de producto individual)
+  
   async getProducto(id: string): Promise<Producto> {
     return this.getProductoPorId(id);
   },
 
-  // Obtener producto por ID
+
   async getProductoPorId(id: string): Promise<Producto> {
     try {
       const response = await fetch(`http://localhost:8080/api/productos/${id}`)
@@ -177,7 +178,7 @@ export const productService = {
     }
   },
 
-  // Obtener categorías
+
   async getCategorias(): Promise<CategoriaDTO[]> {
     try {
       const response = await fetch('http://localhost:8080/api/categorias/obtener')
@@ -186,9 +187,9 @@ export const productService = {
       }
       
       const data = await response.json()
-      console.log('Categories received:', data) // Para debug
+      console.log('Categories received:', data)
       
-      // Mapear las categorías del backend al formato esperado por el frontend
+     
       return data.map((cat: any) => ({
         id: cat.id,
         nombre: cat.nombre,
@@ -199,7 +200,7 @@ export const productService = {
         esCategoriaRaiz: cat.esCategoriaRaiz,
         categoriaPadreId: cat.categoriaPadreId,
         categoriaPadreNombre: cat.categoriaPadreNombre,
-        productCount: 0 // Por ahora en 0, podrías calcularlo si es necesario
+        productCount: 0 
       }))
     } catch (error) {
       console.error('Error al obtener categorías:', error)
@@ -207,7 +208,7 @@ export const productService = {
     }
   },
 
-  // Mapear DTO del backend a objeto del frontend
+
   mapearProductoDTO(dto: any): Producto {
     return {
       id: dto.id,
@@ -226,19 +227,19 @@ export const productService = {
       codigoBarras: dto.codigoBarras,
       enOferta: dto.enOferta || false,
       
-      // Mapear para compatibilidad con el frontend existente
+      
       categoria: {
         id: dto.categoriaId || '',
         nombre: dto.categoriaNombre || 'Sin categoría'
       },
       marca: dto.laboratorio || 'Genérico',
-      rating: 4.5, // Valor por defecto, ajustar según datos reales si están disponibles
+      rating: 4.5, 
       totalReviews: 0,
       tags: generarTags(dto),
       presentacion: dto.presentacion || 'Unidad',
       fechaVencimiento: '2025-12-31',
       
-      // Campos adicionales para la página de producto individual
+   
       imagen: dto.imagenUrl || '/placeholder-product.jpg',
       ingredienteActivo: dto.principioActivo,
       instrucciones: generarInstrucciones(dto),

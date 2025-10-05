@@ -16,6 +16,16 @@ import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/products/product-card"
 import { productService, type Producto, type CategoriaDTO } from "@/lib/products"
 
+// Función para formatear precios en pesos colombianos
+const formatCOP = (precio: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(precio).replace(/\s/g, ' ')
+}
+
 export default function CatalogoPage() {
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<CategoriaDTO[]>([])
@@ -23,10 +33,9 @@ export default function CatalogoPage() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
-  // Filters
   const [busqueda, setBusqueda] = useState("")
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("")
-  const [rangoPrecios, setRangoPrecios] = useState([0, 100])
+  const [rangoPrecios, setRangoPrecios] = useState([0, 100000])
   const [soloSinReceta, setSoloSinReceta] = useState(false)
   const [ordenarPor, setOrdenarPor] = useState<"precio-asc" | "precio-desc" | "nombre" | "rating">("nombre")
 
@@ -47,7 +56,6 @@ export default function CatalogoPage() {
       
       console.log('Cargando datos iniciales...')
       
-      // Cargar categorías y productos iniciales
       const [categoriasData, productosData] = await Promise.all([
         productService.getCategorias().catch(err => {
           console.error('Error cargando categorías:', err)
@@ -64,8 +72,7 @@ export default function CatalogoPage() {
 
       setCategorias(categoriasData)
       setProductos(productosData)
-      
-      // Calcular el rango de precios basado en los productos reales
+
       if (productosData.length > 0) {
         const precios = productosData.map(p => p.precio)
         const minPrecio = Math.floor(Math.min(...precios))
@@ -97,7 +104,7 @@ export default function CatalogoPage() {
         precioMin: rangoPrecios[0],
         precioMax: rangoPrecios[1],
         requiereReceta: soloSinReceta ? false : undefined,
-        activo: true, // Solo productos activos
+        activo: true, 
         ordenarPor,
       }
 
@@ -116,14 +123,14 @@ export default function CatalogoPage() {
     setCategoriaSeleccionada("")
     setSoloSinReceta(false)
     setOrdenarPor("nombre")
-    // Resetear rango de precios a los valores originales
+
     if (productos.length > 0) {
       const precios = productos.map(p => p.precio)
       const minPrecio = Math.floor(Math.min(...precios))
       const maxPrecio = Math.ceil(Math.max(...precios))
       setRangoPrecios([minPrecio, maxPrecio])
     } else {
-      setRangoPrecios([0, 100])
+      setRangoPrecios([0, 100000])
     }
   }
 
@@ -165,13 +172,13 @@ export default function CatalogoPage() {
           <Slider 
             value={rangoPrecios} 
             onValueChange={setRangoPrecios} 
-            max={rangoPrecios[1] > 100 ? rangoPrecios[1] : 100} 
-            step={1} 
+            max={rangoPrecios[1] > 100000 ? rangoPrecios[1] : 100000} 
+            step={1000} 
             className="w-full" 
           />
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>${rangoPrecios[0]}</span>
-            <span>${rangoPrecios[1]}</span>
+            <span>{formatCOP(rangoPrecios[0])}</span>
+            <span>{formatCOP(rangoPrecios[1])}</span>
           </div>
         </div>
       </div>
