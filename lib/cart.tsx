@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useReducer, useEffect, type ReactNode } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { carritoService, type Carrito as CarritoBackend } from "@/lib/services/carrito.services"
 
 export interface CartItem {
   id: string
@@ -25,14 +26,13 @@ interface CartState {
   impuestos: number
   envio: number
   itemCount: number
+  loading: boolean
 }
 
 type CartAction =
-  | { type: "ADD_ITEM"; payload: Omit<CartItem, "cantidad"> }
-  | { type: "REMOVE_ITEM"; payload: string }
-  | { type: "UPDATE_QUANTITY"; payload: { id: string; cantidad: number } }
+  | { type: "SET_ITEMS"; payload: CartItem[] }
+  | { type: "SET_LOADING"; payload: boolean }
   | { type: "CLEAR_CART" }
-  | { type: "LOAD_CART"; payload: CartItem[] }
 
 const initialState: CartState = {
   items: [],
@@ -42,9 +42,10 @@ const initialState: CartState = {
   impuestos: 0,
   envio: 0,
   itemCount: 0,
+  loading: false,
 }
 
-function calculateTotals(items: CartItem[]): Omit<CartState, "items"> {
+function calculateTotals(items: CartItem[]): Omit<CartState, "items" | "loading"> {
   const subtotal = items.reduce((sum, item) => {
     const price = item.precioOferta || item.precio
     return sum + price * item.cantidad
@@ -57,8 +58,8 @@ function calculateTotals(items: CartItem[]): Omit<CartState, "items"> {
     return sum
   }, 0)
 
-  const impuestos = subtotal * 0.16 // IVA 16%
-  const envio = subtotal >= 50 ? 0 : 5.99 // Envío gratis en compras +$50
+  const impuestos = subtotal * 0.16
+  const envio = subtotal >= 50 ? 0 : 5.99
   const total = subtotal + impuestos + envio
   const itemCount = items.reduce((sum, item) => sum + item.cantidad, 0)
 
@@ -72,64 +73,42 @@ function calculateTotals(items: CartItem[]): Omit<CartState, "items"> {
   }
 }
 
+function mapBackendToCartItems(carrito: CarritoBackend): CartItem[] {
+  return carrito.items.map((item) => ({
+    id: item.id,
+    productoId: item.productoId,
+    nombre: item.nombre,
+    precio: item.precio,
+    precioOferta: item.precioOferta,
+    cantidad: item.cantidad,
+    imagen: item.imagen,
+    marca: item.marca,
+    presentacion: item.presentacion,
+    stock: item.stock,
+    requiereReceta: item.requiereReceta,
+  }))
+}
+
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
-    case "ADD_ITEM": {
-      const existingItem = state.items.find((item) => item.productoId === action.payload.id)
-
-      let newItems: CartItem[]
-      if (existingItem) {
-        newItems = state.items.map((item) =>
-          item.productoId === action.payload.id ? { ...item, cantidad: Math.min(item.cantidad + 1, item.stock) } : item,
-        )
-      } else {
-        const newItem: CartItem = {
-          ...action.payload,
-          productoId: action.payload.id,
-          cantidad: 1,
-        }
-        newItems = [...state.items, newItem]
-      }
-
+    case "SET_ITEMS": {
       return {
-        items: newItems,
-        ...calculateTotals(newItems),
+        ...state,
+        items: action.payload,
+        ...calculateTotals(action.payload),
       }
     }
 
-    case "REMOVE_ITEM": {
-      const newItems = state.items.filter((item) => item.productoId !== action.payload)
+    case "SET_LOADING": {
       return {
-        items: newItems,
-        ...calculateTotals(newItems),
-      }
-    }
-
-    case "UPDATE_QUANTITY": {
-      const newItems = state.items
-        .map((item) =>
-          item.productoId === action.payload.id
-            ? { ...item, cantidad: Math.max(0, Math.min(action.payload.cantidad, item.stock)) }
-            : item,
-        )
-        .filter((item) => item.cantidad > 0)
-
-      return {
-        items: newItems,
-        ...calculateTotals(newItems),
+        ...state,
+        loading: action.payload,
       }
     }
 
     case "CLEAR_CART": {
       return {
         ...initialState,
-      }
-    }
-
-    case "LOAD_CART": {
-      return {
-        items: action.payload,
-        ...calculateTotals(action.payload),
       }
     }
 
@@ -140,52 +119,171 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 const CartContext = createContext<{
   state: CartState
-  addToCart: (item: Omit<CartItem, "cantidad">) => void
-  removeFromCart: (id: string) => void
-  updateQuantity: (id: string, cantidad: number) => void
-  clearCart: () => void
+  addToCart: (item: Omit<CartItem, "cantidad">) => Promise<void>
+  removeFromCart: (id: string) => Promise<void>
+  updateQuantity: (id: string, cantidad: number) => Promise<void>
+  clearCart: () => Promise<void>
+  syncCart: () => Promise<void>
 } | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
   const { toast } = useToast()
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem("farmanet-cart")
-    if (savedCart) {
-      try {
-        const items = JSON.parse(savedCart)
-        dispatch({ type: "LOAD_CART", payload: items })
-      } catch (error) {
-        console.error("Error loading cart from localStorage:", error)
+  const getUserId = (): string | null => {
+    if (typeof window === "undefined") return null
+    
+    try {
+      const userStr = localStorage.getItem("user")
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        return user.id
       }
+    } catch (error) {
+      console.error("Error al obtener usuario:", error)
     }
+    
+    return null
+  }
+
+  const syncCart = async () => {
+    const userId = getUserId()
+    if (!userId) {
+      dispatch({ type: "CLEAR_CART" })
+      return
+    }
+
+    try {
+      dispatch({ type: "SET_LOADING", payload: true })
+      const carrito = await carritoService.obtenerCarrito(userId)
+      const items = mapBackendToCartItems(carrito)
+      dispatch({ type: "SET_ITEMS", payload: items })
+    } catch (error) {
+      console.error("Error al sincronizar carrito:", error)
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false })
+    }
+  }
+
+  useEffect(() => {
+    syncCart()
   }, [])
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("farmanet-cart", JSON.stringify(state.items))
-  }, [state.items])
+  const addToCart = async (item: Omit<CartItem, "cantidad">) => {
+    const userId = getUserId()
+    if (!userId) {
+      toast({
+        title: "Inicia sesión",
+        description: "Debes iniciar sesión para agregar productos al carrito",
+        variant: "destructive",
+      })
+      return
+    }
 
-  const addToCart = (item: Omit<CartItem, "cantidad">) => {
-    dispatch({ type: "ADD_ITEM", payload: item })
-    toast({
-      title: "Producto agregado",
-      description: `${item.nombre} se agregó al carrito`,
-    })
+    try {
+      dispatch({ type: "SET_LOADING", payload: true })
+      
+      const carrito = await carritoService.agregarProducto(userId, {
+        productoId: item.id,
+        cantidad: 1,
+      })
+
+      const items = mapBackendToCartItems(carrito)
+      dispatch({ type: "SET_ITEMS", payload: items })
+
+      toast({
+        title: "Producto agregado",
+        description: `${item.nombre} se agregó al carrito`,
+      })
+    } catch (error: any) {
+      console.error("Error al agregar al carrito:", error)
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo agregar el producto",
+        variant: "destructive",
+      })
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false })
+    }
   }
 
-  const removeFromCart = (id: string) => {
-    dispatch({ type: "REMOVE_ITEM", payload: id })
+  const removeFromCart = async (productoId: string) => {
+    const userId = getUserId()
+    if (!userId) return
+
+    try {
+      dispatch({ type: "SET_LOADING", payload: true })
+      
+      const carrito = await carritoService.eliminarProducto(userId, {
+        productoId,
+      })
+
+      const items = mapBackendToCartItems(carrito)
+      dispatch({ type: "SET_ITEMS", payload: items })
+    } catch (error: any) {
+      console.error("Error al eliminar del carrito:", error)
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar el producto",
+        variant: "destructive",
+      })
+      await syncCart()
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false })
+    }
   }
 
-  const updateQuantity = (id: string, cantidad: number) => {
-    dispatch({ type: "UPDATE_QUANTITY", payload: { id, cantidad } })
+  const updateQuantity = async (productoId: string, cantidad: number) => {
+    const userId = getUserId()
+    if (!userId) return
+
+    try {
+      dispatch({ type: "SET_LOADING", payload: true })
+      
+      const carrito = await carritoService.actualizarCantidad(userId, {
+        productoId,
+        cantidad,
+      })
+
+      const items = mapBackendToCartItems(carrito)
+      dispatch({ type: "SET_ITEMS", payload: items })
+    } catch (error: any) {
+      console.error("Error al actualizar cantidad:", error)
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar la cantidad",
+        variant: "destructive",
+      })
+      await syncCart()
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false })
+    }
   }
 
-  const clearCart = () => {
-    dispatch({ type: "CLEAR_CART" })
+  const clearCart = async () => {
+    const userId = getUserId()
+    if (!userId) return
+
+    try {
+      dispatch({ type: "SET_LOADING", payload: true })
+      
+      await carritoService.limpiarCarrito(userId)
+      dispatch({ type: "CLEAR_CART" })
+
+      toast({
+        title: "Carrito vaciado",
+        description: "Todos los productos se eliminaron del carrito",
+      })
+    } catch (error: any) {
+      console.error("Error al limpiar carrito:", error)
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo limpiar el carrito",
+        variant: "destructive",
+      })
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false })
+    }
   }
 
   return (
@@ -196,6 +294,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        syncCart,
       }}
     >
       {children}
@@ -217,9 +316,11 @@ export function useCart() {
     impuestos: context.state.impuestos,
     envio: context.state.envio,
     itemCount: context.state.itemCount,
+    loading: context.state.loading,
     addToCart: context.addToCart,
     removeFromCart: context.removeFromCart,
     updateQuantity: context.updateQuantity,
     clearCart: context.clearCart,
+    syncCart: context.syncCart,
   }
 }
