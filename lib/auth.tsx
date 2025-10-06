@@ -1,4 +1,3 @@
-// Authentication utilities and types
 "use client"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
@@ -12,9 +11,9 @@ export interface User {
   telefono?: string
   direccion?: string
   role?: "admin" | "user"
-  rol: "CLIENTE" | "ADMIN" | "FARMACEUTICO"
-  fechaRegistro: string
-  activo: boolean
+  rol?: "CLIENTE" | "ADMIN" | "FARMACEUTICO"
+  fechaRegistro?: string
+  activo?: boolean
 }
 
 export interface AuthState {
@@ -30,9 +29,7 @@ export const authService = {
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     })
 
@@ -42,10 +39,8 @@ export const authService = {
     }
 
     const data = await response.json()
-
-    // El backend debe devolver algo como: { token: "...", usuario: { ... } }
     const token = data.token || "no-token"
-    const user = data.usuario || data.user || data // tolerante a distintas estructuras
+    const user = data.usuario || data.user || data
 
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
@@ -63,10 +58,15 @@ export const authService = {
   }): Promise<{ user: User; token: string }> {
     const response = await fetch(`${API_URL}/registro`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
+      headers: { "Content-Type": "application/json" },
+      // 👇 El backend espera “contraseña”, no “password”
+      body: JSON.stringify({
+        nombre: userData.nombre,
+        apellido: userData.apellido,
+        email: userData.email,
+        telefono: userData.telefono,
+        contraseña: userData.password,
+      }),
     })
 
     if (!response.ok) {
@@ -75,9 +75,8 @@ export const authService = {
     }
 
     const user = await response.json()
+    const token = "registro-token" // Simulado si backend no devuelve JWT
 
-    // Como el registro probablemente no devuelva token, simulamos uno:
-    const token = "registro-token"
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
 
@@ -90,7 +89,6 @@ export const authService = {
   },
 
   async forgotPassword(email: string): Promise<void> {
-    // (pendiente: implementar en backend si deseas)
     await new Promise((resolve) => setTimeout(resolve, 1000))
     console.log(`Password reset email sent to ${email}`)
   },
@@ -183,16 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        register,
-        logout,
-        forgotPassword,
-        isLoading,
-      }}
-    >
+    <AuthContext.Provider value={{ user, login, register, logout, forgotPassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   )
@@ -205,3 +194,4 @@ export function useAuth() {
   }
   return context
 }
+
