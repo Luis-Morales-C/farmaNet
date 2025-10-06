@@ -6,12 +6,12 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 export interface User {
   id: string
   email: string
-  name?: string // Added name field for compatibility
+  name?: string
   nombre: string
   apellido: string
   telefono?: string
   direccion?: string
-  role?: "admin" | "user" // Added role field for compatibility
+  role?: "admin" | "user"
   rol: "CLIENTE" | "ADMIN" | "FARMACEUTICO"
   fechaRegistro: string
   activo: boolean
@@ -23,33 +23,37 @@ export interface AuthState {
   isAuthenticated: boolean
 }
 
-// Mock authentication functions - replace with actual API calls
-export const authService = {
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+const API_URL = "http://localhost:8080/api/usuarios"
 
-    // Mock successful login
-    const user: User = {
-      id: "1",
-      email,
-      name: "Juan Pérez", // Added name field
-      nombre: "Juan",
-      apellido: "Pérez",
-      telefono: "+1234567890",
-      role: email.includes("admin") ? "admin" : "user", // Added role field
-      rol: email.includes("admin") ? "ADMIN" : "CLIENTE",
-      fechaRegistro: new Date().toISOString(),
-      activo: true,
+export const authService = {
+  // 🔹 LOGIN con backend real
+  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+    const response = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Error en el login: ${errorText || response.statusText}`)
     }
 
-    const token = "mock-jwt-token"
+    const data = await response.json()
+
+    // El backend debe devolver algo como: { token: "...", usuario: { ... } }
+    const token = data.token || "no-token"
+    const user = data.usuario || data.user || data // tolerante a distintas estructuras
+
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
 
     return { user, token }
   },
 
+  // 🔹 REGISTRO con backend real
   async register(userData: {
     email: string
     password: string
@@ -57,23 +61,23 @@ export const authService = {
     apellido: string
     telefono?: string
   }): Promise<{ user: User; token: string }> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const response = await fetch(`${API_URL}/registro`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    })
 
-    const user: User = {
-      id: Date.now().toString(),
-      email: userData.email,
-      name: `${userData.nombre} ${userData.apellido}`, // Added name field
-      nombre: userData.nombre,
-      apellido: userData.apellido,
-      telefono: userData.telefono,
-      role: "user", // Added role field
-      rol: "CLIENTE",
-      fechaRegistro: new Date().toISOString(),
-      activo: true,
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Error en el registro: ${errorText || response.statusText}`)
     }
 
-    const token = "mock-jwt-token"
+    const user = await response.json()
+
+    // Como el registro probablemente no devuelva token, simulamos uno:
+    const token = "registro-token"
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
 
@@ -86,13 +90,12 @@ export const authService = {
   },
 
   async forgotPassword(email: string): Promise<void> {
-    // Simulate API call
+    // (pendiente: implementar en backend si deseas)
     await new Promise((resolve) => setTimeout(resolve, 1000))
     console.log(`Password reset email sent to ${email}`)
   },
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
     console.log("Password reset successfully")
   },
@@ -133,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing user on mount
     const currentUser = authService.getCurrentUser()
     setUser(currentUser)
     setIsLoading(false)
@@ -144,6 +146,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { user } = await authService.login(email, password)
       setUser(user)
+    } catch (error) {
+      console.error("Error en login:", error)
+      throw error
     } finally {
       setIsLoading(false)
     }
@@ -160,6 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { user } = await authService.register(userData)
       setUser(user)
+    } catch (error) {
+      console.error("Error en registro:", error)
+      throw error
     } finally {
       setIsLoading(false)
     }
