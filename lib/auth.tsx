@@ -25,7 +25,6 @@ export interface AuthState {
 const API_URL = "http://localhost:8080/api/usuarios"
 
 export const authService = {
-  // 🔹 LOGIN con backend real
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
@@ -45,10 +44,12 @@ export const authService = {
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
 
+    // Disparar evento para que el carrito se sincronice
+    window.dispatchEvent(new Event("user-login"))
+
     return { user, token }
   },
 
-  // 🔹 REGISTRO con backend real
   async register(userData: {
     email: string
     password: string
@@ -59,7 +60,6 @@ export const authService = {
     const response = await fetch(`${API_URL}/registro`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // 👇 El backend espera “contraseña”, no “password”
       body: JSON.stringify({
         nombre: userData.nombre,
         apellido: userData.apellido,
@@ -75,10 +75,13 @@ export const authService = {
     }
 
     const user = await response.json()
-    const token = "registro-token" // Simulado si backend no devuelve JWT
+    const token = "registro-token"
 
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
+
+    // Disparar evento para que el carrito se sincronice
+    window.dispatchEvent(new Event("user-login"))
 
     return { user, token }
   },
@@ -86,6 +89,9 @@ export const authService = {
   async logout(): Promise<void> {
     localStorage.removeItem("auth-token")
     localStorage.removeItem("user")
+    
+    // Disparar evento para que el carrito se limpie
+    window.dispatchEvent(new Event("user-logout"))
   },
 
   async forgotPassword(email: string): Promise<void> {
@@ -194,4 +200,3 @@ export function useAuth() {
   }
   return context
 }
-

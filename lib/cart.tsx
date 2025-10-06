@@ -74,19 +74,26 @@ function calculateTotals(items: CartItem[]): Omit<CartState, "items" | "loading"
 }
 
 function mapBackendToCartItems(carrito: CarritoBackend): CartItem[] {
-  return carrito.items.map((item) => ({
-    id: item.id,
-    productoId: item.productoId,
-    nombre: item.nombre,
-    precio: item.precio,
-    precioOferta: item.precioOferta,
-    cantidad: item.cantidad,
-    imagen: item.imagen,
-    marca: item.marca,
-    presentacion: item.presentacion,
-    stock: item.stock,
-    requiereReceta: item.requiereReceta,
-  }))
+  console.log("Mapeando items del carrito:", carrito.items)
+  
+  return carrito.items.map((item) => {
+    const mappedItem = {
+      id: item.id,
+      productoId: item.productoId,
+      nombre: item.nombre || "Producto sin nombre",
+      precio: Number(item.precio) || 0,
+      precioOferta: item.precioOferta ? Number(item.precioOferta) : undefined,
+      cantidad: Number(item.cantidad) || 1,
+      imagen: item.imagen,
+      marca: item.marca,
+      presentacion: item.presentacion,
+      stock: Number(item.stock) || 0,
+      requiereReceta: item.requiereReceta || false,
+    }
+    
+    console.log("Item mapeado:", mappedItem)
+    return mappedItem
+  })
 }
 
 function cartReducer(state: CartState, action: CartAction): CartState {
@@ -130,6 +137,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
   const { toast } = useToast()
 
+  // Obtener el ID del usuario desde localStorage (auth)
   const getUserId = (): string | null => {
     if (typeof window === "undefined") return null
     
@@ -146,6 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return null
   }
 
+  // Sincronizar carrito con el backend
   const syncCart = async () => {
     const userId = getUserId()
     if (!userId) {
@@ -165,8 +174,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Cargar carrito al montar el componente y cuando cambie el usuario
   useEffect(() => {
     syncCart()
+    
+    // Escuchar evento de login
+    const handleUserLogin = () => {
+      console.log("Usuario ha iniciado sesión, sincronizando carrito...")
+      syncCart()
+    }
+    
+    // Escuchar evento de logout
+    const handleUserLogout = () => {
+      console.log("Usuario ha cerrado sesión, limpiando carrito...")
+      dispatch({ type: "CLEAR_CART" })
+    }
+    
+    window.addEventListener("user-login", handleUserLogin)
+    window.addEventListener("user-logout", handleUserLogout)
+    
+    return () => {
+      window.removeEventListener("user-login", handleUserLogin)
+      window.removeEventListener("user-logout", handleUserLogout)
+    }
   }, [])
 
   const addToCart = async (item: Omit<CartItem, "cantidad">) => {
