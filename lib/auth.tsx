@@ -23,6 +23,7 @@ export interface AuthState {
 }
 
 const API_URL = "http://localhost:8080/api/usuarios"
+const LOGOUT_URL = "http://localhost:8080/logout"
 
 export const authService = {
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
@@ -87,9 +88,25 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
+    try {
+      const token = this.getToken()
+      if (token) {
+        await fetch(LOGOUT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+        })
+      }
+    } catch (error) {
+      console.error("Error calling logout API:", error)
+      // Continue with local logout even if API fails
+    }
+
     localStorage.removeItem("auth-token")
     localStorage.removeItem("user")
-    
+
     // Disparar evento para que el carrito se limpie
     window.dispatchEvent(new Event("user-logout"))
   },
@@ -130,7 +147,7 @@ export const AuthContext = createContext<{
     apellido: string
     telefono?: string
   }) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   isLoading: boolean
 } | null>(null)
@@ -140,8 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser()
-    setUser(currentUser)
+    // const currentUser = authService.getCurrentUser()
+    // setUser(currentUser)
     setIsLoading(false)
   }, [])
 
@@ -177,10 +194,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    authService.logout()
+  const logout = async () => {
+    await authService.logout()
     setUser(null)
   }
+
 
   const forgotPassword = async (email: string) => {
     await authService.forgotPassword(email)

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Search, ShoppingCart, User, Menu, X, Heart, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,18 +14,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { useAuth } from "@/lib/auth"
 import { useCart } from "@/lib/cart"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const { user, isLoading, logout } = useAuth()
   const isAuthenticated = !!user && !isLoading
   const { itemCount } = useCart()
+  const router = useRouter()
 
   const handleLogout = async () => {
     await logout()
+    router.push("/login")
   }
 
   return (
@@ -96,39 +111,28 @@ export function Header() {
 
             {/* User Menu */}
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5 text-sm font-medium">
-                    {user?.nombre} {user?.apellido}
-                  </div>
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">{user?.email}</div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/perfil">Mi Perfil</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/pedidos">Mis Pedidos</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/favoritos">Favoritos</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {user?.rol === "ADMIN" && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin">Panel Admin</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={handleLogout}>Cerrar Sesión</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">{user?.nombre} {user?.apellido}</span>
+                <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      Cerrar Sesión
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás seguro de que quieres cerrar sesión?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Se cerrará tu sesión actual y serás redirigido a la página de inicio de sesión.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleLogout}>Cerrar Sesión</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             ) : (
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" size="sm" asChild>
