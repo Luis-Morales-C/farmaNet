@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { type Categoria, productService } from "@/lib/products"
+import { type Categoria, categoriaService } from "@/lib/categoria"
 
 export default function CategoriasPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -20,8 +20,13 @@ export default function CategoriasPage() {
 
   const loadCategorias = async () => {
     try {
-      const data = await productService.getCategorias()
-      setCategorias(data)
+      // Obtener categorías raíz
+      const data = await categoriaService.getCategoriasRaiz()
+      
+      // Enriquecer con subcategorías
+      const categoriasConSubs = await categoriaService.enriquecerConSubcategorias(data)
+      
+      setCategorias(categoriasConSubs)
     } catch (error) {
       console.error("Error loading categories:", error)
     } finally {
@@ -52,7 +57,9 @@ export default function CategoriasPage() {
         <div className="container mx-auto px-4 py-8">
           {/* Page Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4 font-space-grotesk">Categorías de Productos</h1>
+            <h1 className="text-4xl font-bold mb-4 font-space-grotesk">
+              Categorías de Productos
+            </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Explora nuestras categorías organizadas para encontrar exactamente lo que necesitas
             </p>
@@ -61,30 +68,41 @@ export default function CategoriasPage() {
           {/* Categories Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {categorias.map((categoria) => (
-              <Card key={categoria.id} className="group hover:shadow-lg transition-all duration-200 overflow-hidden">
+              <Card 
+                key={categoria.id} 
+                className="group hover:shadow-lg transition-all duration-200 overflow-hidden"
+              >
                 <div className="relative">
                   <img
-                    src={categoria.imagen || "/placeholder.svg"}
+                    src={categoria.imagen || categoria.imagenUrl || "/placeholder.svg"}
                     alt={categoria.nombre}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
-                  <Badge className="absolute top-4 right-4 bg-primary">{categoria.productCount} productos</Badge>
+                  {categoria.productCount && categoria.productCount > 0 && (
+                    <Badge className="absolute top-4 right-4 bg-primary">
+                      {categoria.productCount} productos
+                    </Badge>
+                  )}
                 </div>
 
                 <CardHeader>
-                  <CardTitle className="text-xl font-space-grotesk">{categoria.nombre}</CardTitle>
+                  <CardTitle className="text-xl font-space-grotesk">
+                    {categoria.nombre}
+                  </CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">{categoria.descripcion}</p>
+                  <p className="text-muted-foreground">
+                    {categoria.descripcion}
+                  </p>
 
                   {categoria.subcategorias && categoria.subcategorias.length > 0 && (
                     <div>
                       <h4 className="font-semibold mb-2 text-sm">Subcategorías:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {categoria.subcategorias.slice(0, 4).map((sub) => (
-                          <Badge key={sub} variant="secondary" className="text-xs">
+                        {categoria.subcategorias.slice(0, 4).map((sub, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
                             {sub}
                           </Badge>
                         ))}
