@@ -14,7 +14,7 @@ export function Footer() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <span className="text-lg font-bold">F</span>
               </div>
-              <span className="text-xl font-bold text-primary font-space-grotesk">FarmaciApp</span>
+              <span className="text-xl font-bold text-primary font-space-grotesk">FarmaNet</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Tu farmacia online de confianza. Medicamentos y productos de salud con la mejor calidad y servicio.
@@ -92,15 +92,15 @@ export function Footer() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">+1 (555) 123-4567</span>
+                <span className="text-muted-foreground">+57 3104542581</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">info@farmaciapp.com</span>
+                <span className="text-muted-foreground">info@farmanet.com</span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">123 Calle Principal, Ciudad</span>
+                <span className="text-muted-foreground">Armenia Quindio - Colombia</span>
               </div>
             </div>
 
@@ -116,7 +116,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 FarmaciApp. Todos los derechos reservados.</p>
+          <p>&copy; 2024 FarmaNet. Todos los derechos reservados.</p>
           <div className="flex justify-center space-x-4 mt-2">
             <Link href="/privacidad" className="hover:text-primary transition-colors">
               Política de Privacidad
