@@ -56,10 +56,12 @@ class CarritoService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
+      const token = localStorage.getItem('auth-token')
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
           "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` }),
           ...options.headers,
         },
       })
@@ -67,7 +69,7 @@ class CarritoService {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Error en la petición")
+        throw new Error(data.error || data.message || "Error en la petición")
       }
 
       return data

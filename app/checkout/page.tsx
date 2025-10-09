@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
 import { useCart } from "@/lib/cart"
@@ -19,13 +19,13 @@ import { toast } from "sonner"
 export default function CheckoutPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { items, total, subtotal, tax, shipping, clearCart } = useCart()
+  const { items, total, subtotal, impuestos: tax, envio: shipping, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
   const [sameAsBilling, setSameAsBilling] = useState(true)
 
   const [formData, setFormData] = useState<CheckoutData>({
-    items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+    items: items.map((item) => ({ productId: item.productoId, quantity: item.cantidad })),
     shippingAddress: {
       fullName: user?.name || "",
       street: "",
@@ -50,6 +50,14 @@ export default function CheckoutPage() {
     },
   })
 
+  // Update formData items when cart items change
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      items: items.map((item) => ({ productId: item.productoId, quantity: item.cantidad }))
+    }))
+  }, [items])
+
   const handleInputChange = (section: keyof CheckoutData, field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -61,24 +69,33 @@ export default function CheckoutPage() {
   }
 
   const handleSubmitOrder = async () => {
+    console.log("🟢 handleSubmitOrder ejecutado")
     if (!user) {
       toast.error("Debes iniciar sesión para realizar una compra")
       router.push("/login")
       return
     }
 
+    console.log("👤 Usuario:", user)
+    console.log("📦 FormData enviado:", formData)
+
     setLoading(true)
     try {
+      console.log("➡️ Intentando crear orden...")
       const order = await ordersApi.createOrder(formData)
+      console.log("✅ Respuesta del backend:", order)
       clearCart()
       toast.success("¡Pedido realizado exitosamente!")
       router.push(`/pedidos/${order.id}`)
     } catch (error) {
+      console.error("❌ Error al procesar pedido:", error)
       toast.error("Error al procesar el pedido. Inténtalo de nuevo.")
     } finally {
+      console.log("🔚 handleSubmitOrder finalizado")
       setLoading(false)
     }
   }
+
 
   if (!user) {
     return (
@@ -292,13 +309,13 @@ export default function CheckoutPage() {
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3">
                   <div className="relative h-12 w-12 rounded-md overflow-hidden">
-                    <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+                    <Image src={item.imagen || "/placeholder.svg"} alt={item.nombre} fill className="object-cover" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-sm">{item.name}</div>
-                    <div className="text-sm text-muted-foreground">Cantidad: {item.quantity}</div>
+                    <div className="font-medium text-sm">{item.nombre}</div>
+                    <div className="text-sm text-muted-foreground">Cantidad: {item.cantidad}</div>
                   </div>
-                  <div className="font-medium">${(item.price * item.quantity).toFixed(2)}</div>
+                  <div className="font-medium">${((item.precioOferta || item.precio) * item.cantidad).toFixed(2)}</div>
                 </div>
               ))}
 
@@ -324,9 +341,18 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <Button onClick={handleSubmitOrder} disabled={loading} className="w-full" size="lg">
+              <Button
+                  onClick={() => {
+                    console.log("✅ Click detectado");
+                    handleSubmitOrder();
+                  }}
+                  disabled={loading}
+                  className="w-full"
+                  size="lg"
+              >
                 {loading ? "Procesando..." : "Confirmar Pedido"}
               </Button>
+
 
               <div className="text-xs text-muted-foreground text-center">
                 Al confirmar tu pedido, aceptas nuestros términos y condiciones

@@ -1,11 +1,13 @@
 // types/productos.ts
+import { catalogoService } from './catalogo.service'
+
 export interface Producto {
   id: string
   nombre: string
   descripcion: string
   precio: number
   precioOferta?: number
-  imagenUrl: string
+  imagen: string // Campo principal de imagen (del backend)
   categoriaId: string
   categoriaNombre: string
   laboratorio?: string
@@ -27,7 +29,6 @@ export interface Producto {
   presentacion: string
   fechaVencimiento: string
 
-  imagen: string
   ingredienteActivo?: string
   instrucciones?: string
   contraindicaciones?: string
@@ -178,6 +179,51 @@ export const productService = {
     }
   },
 
+  // Métodos usando el servicio de catálogo
+  async getCatalogo(): Promise<Producto[]> {
+    try {
+      const productos = await catalogoService.obtenerCatalogo()
+      return productos.map(this.mapearProductoDTO)
+    } catch (error) {
+      console.error('Error obteniendo catálogo:', error)
+      // Fallback al método original
+      return this.getProductos({ activo: true })
+    }
+  },
+
+  async buscarProductosCatalogo(nombre: string): Promise<Producto[]> {
+    try {
+      const productos = await catalogoService.buscarProductos(nombre)
+      return productos.map(this.mapearProductoDTO)
+    } catch (error) {
+      console.error('Error buscando en catálogo:', error)
+      // Fallback a búsqueda normal
+      return this.getProductos({ busqueda: nombre, activo: true })
+    }
+  },
+
+  async getOfertas(): Promise<Producto[]> {
+    try {
+      const productos = await catalogoService.obtenerOfertas()
+      return productos.map(this.mapearProductoDTO)
+    } catch (error) {
+      console.error('Error obteniendo ofertas:', error)
+      // Fallback a productos en oferta
+      return this.getProductos({ activo: true }).then(productos =>
+        productos.filter(p => p.enOferta)
+      )
+    }
+  },
+
+  async getProductosPorCategoria(categoriaId: string): Promise<Producto[]> {
+    try {
+      const productos = await catalogoService.obtenerProductosPorCategoria(categoriaId)
+      return productos.map(this.mapearProductoDTO)
+    } catch (error) {
+      console.error('Error obteniendo productos por categoría:', error)
+      return this.getProductos({ categoriaId, activo: true })
+    }
+  },
 
   async getCategorias(): Promise<CategoriaDTO[]> {
     try {
@@ -216,7 +262,7 @@ export const productService = {
       descripcion: dto.descripcion || 'Información del producto disponible próximamente.',
       precio: parseFloat(dto.precio) || 0,
       precioOferta: dto.precioOferta ? parseFloat(dto.precioOferta) : undefined,
-      imagenUrl: dto.imagenUrl || '/placeholder-product.jpg',
+      imagen: dto.imagen || '/placeholder-product.jpg', // Campo unificado
       categoriaId: dto.categoriaId || '',
       categoriaNombre: dto.categoriaNombre || 'Sin categoría',
       laboratorio: dto.laboratorio || 'Genérico',
@@ -226,21 +272,18 @@ export const productService = {
       principioActivo: dto.principioActivo,
       codigoBarras: dto.codigoBarras,
       enOferta: dto.enOferta || false,
-      
-      
+
       categoria: {
         id: dto.categoriaId || '',
         nombre: dto.categoriaNombre || 'Sin categoría'
       },
       marca: dto.laboratorio || 'Genérico',
-      rating: 4.5, 
+      rating: 4.5,
       totalReviews: 0,
       tags: generarTags(dto),
       presentacion: dto.presentacion || 'Unidad',
       fechaVencimiento: '2025-12-31',
-      
-   
-      imagen: dto.imagenUrl || '/placeholder-product.jpg',
+
       ingredienteActivo: dto.principioActivo,
       instrucciones: generarInstrucciones(dto),
       contraindicaciones: generarContraindicaciones(dto)

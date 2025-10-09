@@ -164,9 +164,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: "SET_LOADING", payload: true })
-      const carrito = await carritoService.obtenerCarrito(userId)
-      const items = mapBackendToCartItems(carrito)
-      dispatch({ type: "SET_ITEMS", payload: items })
+      try {
+        const carrito = await carritoService.obtenerCarrito(userId)
+        const items = mapBackendToCartItems(carrito)
+        dispatch({ type: "SET_ITEMS", payload: items })
+      } catch (backendError) {
+        console.warn("Backend no disponible, cargando desde localStorage:", backendError)
+        // Fallback a localStorage
+        const localCartKey = `cart_${userId}`
+        const existingCart = localStorage.getItem(localCartKey)
+        let cartItems: CartItem[] = []
+
+        if (existingCart) {
+          try {
+            cartItems = JSON.parse(existingCart)
+          } catch (e) {
+            cartItems = []
+          }
+        }
+
+        dispatch({ type: "SET_ITEMS", payload: cartItems })
+      }
     } catch (error) {
       console.error("Error al sincronizar carrito:", error)
     } finally {
@@ -212,14 +230,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: "SET_LOADING", payload: true })
-      
-      const carrito = await carritoService.agregarProducto(userId, {
-        productoId: item.id,
-        cantidad: 1,
-      })
 
-      const items = mapBackendToCartItems(carrito)
-      dispatch({ type: "SET_ITEMS", payload: items })
+      // Intentar usar el backend primero
+      try {
+        const carrito = await carritoService.agregarProducto(userId, {
+          productoId: item.id,
+          cantidad: 1,
+        })
+
+        const items = mapBackendToCartItems(carrito)
+        dispatch({ type: "SET_ITEMS", payload: items })
+      } catch (backendError) {
+        console.warn("Backend no disponible, usando localStorage:", backendError)
+        // Fallback a localStorage si el backend falla
+        const localCartKey = `cart_${userId}`
+        const existingCart = localStorage.getItem(localCartKey)
+        let cartItems: CartItem[] = []
+
+        if (existingCart) {
+          try {
+            cartItems = JSON.parse(existingCart)
+          } catch (e) {
+            cartItems = []
+          }
+        }
+
+        // Verificar si el producto ya existe
+        const existingItem = cartItems.find(cartItem => cartItem.productoId === item.id)
+        if (existingItem) {
+          existingItem.cantidad += 1
+        } else {
+          cartItems.push({
+            ...item,
+            productoId: item.id,
+            cantidad: 1,
+          })
+        }
+
+        localStorage.setItem(localCartKey, JSON.stringify(cartItems))
+        dispatch({ type: "SET_ITEMS", payload: cartItems })
+      }
 
       toast({
         title: "Producto agregado",
@@ -243,13 +293,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: "SET_LOADING", payload: true })
-      
-      const carrito = await carritoService.eliminarProducto(userId, {
-        productoId,
-      })
 
-      const items = mapBackendToCartItems(carrito)
-      dispatch({ type: "SET_ITEMS", payload: items })
+      try {
+        const carrito = await carritoService.eliminarProducto(userId, {
+          productoId,
+        })
+
+        const items = mapBackendToCartItems(carrito)
+        dispatch({ type: "SET_ITEMS", payload: items })
+      } catch (backendError) {
+        console.warn("Backend no disponible, eliminando desde localStorage:", backendError)
+        // Fallback a localStorage
+        const localCartKey = `cart_${userId}`
+        const existingCart = localStorage.getItem(localCartKey)
+        let cartItems: CartItem[] = []
+
+        if (existingCart) {
+          try {
+            cartItems = JSON.parse(existingCart)
+          } catch (e) {
+            cartItems = []
+          }
+        }
+
+        cartItems = cartItems.filter(item => item.productoId !== productoId)
+        localStorage.setItem(localCartKey, JSON.stringify(cartItems))
+        dispatch({ type: "SET_ITEMS", payload: cartItems })
+      }
     } catch (error: any) {
       console.error("Error al eliminar del carrito:", error)
       toast({
@@ -269,14 +339,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: "SET_LOADING", payload: true })
-      
-      const carrito = await carritoService.actualizarCantidad(userId, {
-        productoId,
-        cantidad,
-      })
 
-      const items = mapBackendToCartItems(carrito)
-      dispatch({ type: "SET_ITEMS", payload: items })
+      try {
+        const carrito = await carritoService.actualizarCantidad(userId, {
+          productoId,
+          cantidad,
+        })
+
+        const items = mapBackendToCartItems(carrito)
+        dispatch({ type: "SET_ITEMS", payload: items })
+      } catch (backendError) {
+        console.warn("Backend no disponible, actualizando desde localStorage:", backendError)
+        // Fallback a localStorage
+        const localCartKey = `cart_${userId}`
+        const existingCart = localStorage.getItem(localCartKey)
+        let cartItems: CartItem[] = []
+
+        if (existingCart) {
+          try {
+            cartItems = JSON.parse(existingCart)
+          } catch (e) {
+            cartItems = []
+          }
+        }
+
+        const itemToUpdate = cartItems.find(item => item.productoId === productoId)
+        if (itemToUpdate) {
+          itemToUpdate.cantidad = cantidad
+          localStorage.setItem(localCartKey, JSON.stringify(cartItems))
+          dispatch({ type: "SET_ITEMS", payload: cartItems })
+        }
+      }
     } catch (error: any) {
       console.error("Error al actualizar cantidad:", error)
       toast({
@@ -296,9 +389,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: "SET_LOADING", payload: true })
-      
-      await carritoService.limpiarCarrito(userId)
-      dispatch({ type: "CLEAR_CART" })
+
+      try {
+        await carritoService.limpiarCarrito(userId)
+        dispatch({ type: "CLEAR_CART" })
+      } catch (backendError) {
+        console.warn("Backend no disponible, limpiando desde localStorage:", backendError)
+        // Fallback a localStorage
+        const localCartKey = `cart_${userId}`
+        localStorage.removeItem(localCartKey)
+        dispatch({ type: "CLEAR_CART" })
+      }
 
       toast({
         title: "Carrito vaciado",

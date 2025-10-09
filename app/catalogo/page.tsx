@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Search, Filter, Grid, List, SlidersHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,9 +40,15 @@ export default function CatalogoPage() {
   const [soloSinReceta, setSoloSinReceta] = useState(false)
   const [ordenarPor, setOrdenarPor] = useState<"precio-asc" | "precio-desc" | "nombre" | "rating">("nombre")
 
+  const searchParams = useSearchParams()
+
   useEffect(() => {
+    const categoriaFromUrl = searchParams.get('categoria')
+    if (categoriaFromUrl) {
+      setCategoriaSeleccionada(categoriaFromUrl)
+    }
     loadInitialData()
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if (!isLoading) {
