@@ -42,6 +42,12 @@ export function Header() {
     router.push("/login")
   }
 
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/catalogo?search=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -64,6 +70,7 @@ export function Header() {
                 className="pl-10 pr-4"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
               />
             </div>
           </div>
@@ -161,6 +168,7 @@ export function Header() {
               className="pl-10 pr-4"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
             />
           </div>
         </div>

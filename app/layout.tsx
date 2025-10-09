@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: "FarmaNet - Tu Farmacia Online",
   description:
     "Sistema completo de farmacia online con catálogo de medicamentos, carrito de compras y gestión de pedidos",
-  generator: "v0.app",
+  generator: "",
 }
 
 export default function RootLayout({

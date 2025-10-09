@@ -44,8 +44,12 @@ export default function CatalogoPage() {
 
   useEffect(() => {
     const categoriaFromUrl = searchParams.get('categoria')
+    const searchFromUrl = searchParams.get('search')
     if (categoriaFromUrl) {
       setCategoriaSeleccionada(categoriaFromUrl)
+    }
+    if (searchFromUrl) {
+      setBusqueda(searchFromUrl)
     }
     loadInitialData()
   }, [searchParams])
