@@ -30,7 +30,7 @@ export default function AdminCategories() {
       }
     }
 
-    if (user?.role === "admin") {
+    if (user?.rol === "ADMIN") {
       loadCategories()
     }
   }, [user])

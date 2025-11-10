@@ -34,7 +34,7 @@ export default function AdminProducts() {
       }
     }
 
-    if (user?.role === "admin") {
+    if (user?.rol === "ADMIN") {
       loadProducts()
     }
   }, [user])

@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { adminApi, type AdminStats } from "@/lib/admin"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Package, ShoppingCart, DollarSign, AlertTriangle, TrendingUp, BarChart3 } from "lucide-react"
 import Link from "next/link"
 
-export default function AdminDashboard() {
+function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -234,5 +235,13 @@ export default function AdminDashboard() {
         </Card>
       )}
     </div>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <ProtectedRoute requiredRole="ADMIN">
+      <AdminDashboard />
+    </ProtectedRoute>
   )
 }

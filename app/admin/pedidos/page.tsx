@@ -46,7 +46,7 @@ export default function AdminOrders() {
       }
     }
 
-    if (user?.role === "admin") {
+    if (user?.rol === "ADMIN") {
       loadOrders()
     }
   }, [user])

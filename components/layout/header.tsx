@@ -154,16 +154,16 @@ export function Header() {
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      console.log("[Header] Click en 'Usuarios'", {
+                      console.log("[Header] Click en 'Panel Admin'", {
                         isAuthenticated,
                         user: user?.nombre,
                         rol: user?.rol,
                       })
-                      handleNavigate("/admin/usuarios")
+                      handleNavigate("/admin")
                     }}
                   >
                     <Shield className="h-4 w-4 mr-2" />
-                    Usuarios
+                    Panel Admin
                   </Button>
                 )}
 

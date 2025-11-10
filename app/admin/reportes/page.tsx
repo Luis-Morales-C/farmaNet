@@ -36,7 +36,7 @@ export default function AdminReports() {
       }
     }
 
-    if (user?.role === "admin") {
+    if (user?.rol === "ADMIN") {
       loadStats()
     }
   }, [user])

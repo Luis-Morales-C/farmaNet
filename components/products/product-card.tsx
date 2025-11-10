@@ -17,7 +17,7 @@ interface ProductCardProps {
 export function ProductCard({ producto, viewMode = "grid" }: ProductCardProps) {
   const { toast } = useToast()
   const { addToCart } = useCart()
-  const precioFinal = producto.precioOferta || producto.precio
+  const precioFinal = producto.precioOferta || producto.precio || 0
   const tieneOferta = !!producto.precioOferta
 
   const handleAddToCart = () => {
@@ -83,12 +83,12 @@ export function ProductCard({ producto, viewMode = "grid" }: ProductCardProps) {
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="flex items-center gap-2">
-                      {tieneOferta && (
+                      {tieneOferta && producto.precio && producto.precio > 0 && (
                         <span className="text-sm text-muted-foreground line-through">
-                          ${producto.precio.toFixed(2)}
+                          ${(producto.precio || 0).toFixed(2)}
                         </span>
                       )}
-                      <span className="text-lg font-bold text-primary">${precioFinal.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-primary">${(precioFinal || 0).toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{producto.presentacion}</p>
                   </div>
@@ -115,9 +115,9 @@ export function ProductCard({ producto, viewMode = "grid" }: ProductCardProps) {
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
         />
 
-        {tieneOferta && (
+        {tieneOferta && producto.precio && producto.precio > 0 && (
           <Badge className="absolute top-2 left-2 bg-destructive">
-            -{Math.round(((producto.precio - precioFinal) / producto.precio) * 100)}%
+            -{Math.round((((producto.precio || 0) - (precioFinal || 0)) / (producto.precio || 1)) * 100)}%
           </Badge>
         )}
 
@@ -159,10 +159,10 @@ export function ProductCard({ producto, viewMode = "grid" }: ProductCardProps) {
 
         <div className="flex items-center justify-between mb-3">
           <div>
-            {tieneOferta && (
-              <span className="text-sm text-muted-foreground line-through block">${producto.precio.toFixed(2)}</span>
+            {tieneOferta && producto.precio && producto.precio > 0 && (
+              <span className="text-sm text-muted-foreground line-through block">${(producto.precio || 0).toFixed(2)}</span>
             )}
-            <span className="text-lg font-bold text-primary">${precioFinal.toFixed(2)}</span>
+            <span className="text-lg font-bold text-primary">${(precioFinal || 0).toFixed(2)}</span>
           </div>
           <span className="text-xs text-muted-foreground">{producto.presentacion}</span>
         </div>

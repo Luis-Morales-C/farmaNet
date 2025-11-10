@@ -30,7 +30,7 @@ export default function AdminPromotions() {
       }
     }
 
-    if (user?.role === "admin") {
+    if (user?.rol === "ADMIN") {
       loadPromotions()
     }
   }, [user])

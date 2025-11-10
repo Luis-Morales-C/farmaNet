@@ -230,17 +230,17 @@ export default function CarritoPage() {
 
                           <div className="text-right">
                             <div className="flex items-center gap-2">
-                              {item.precioOferta && (
+                              {item.precioOferta && item.precioOferta > 0 && (
                                 <span className="text-sm text-muted-foreground line-through">
-                                  ${(item.precio * item.cantidad).toFixed(2)}
+                                  ${((item.precio || 0) * item.cantidad).toFixed(2)}
                                 </span>
                               )}
                               <span className="font-semibold text-primary">
-                                ${((item.precioOferta || item.precio) * item.cantidad).toFixed(2)}
+                                ${((item.precioOferta || item.precio || 0) * item.cantidad).toFixed(2)}
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              ${(item.precioOferta || item.precio).toFixed(2)} c/u
+                              ${(item.precioOferta || item.precio || 0).toFixed(2)} c/u
                             </p>
                           </div>
                         </div>
@@ -284,24 +284,24 @@ export default function CarritoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Subtotal ({itemCount} productos)</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>${(subtotal || 0).toFixed(2)}</span>
                     </div>
 
-                    {descuentos > 0 && (
+                    {(descuentos || 0) > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
                         <span>Descuentos</span>
-                        <span>-${descuentos.toFixed(2)}</span>
+                        <span>-${(descuentos || 0).toFixed(2)}</span>
                       </div>
                     )}
 
                     <div className="flex justify-between text-sm">
                       <span>Impuestos (IVA 16%)</span>
-                      <span>${impuestos.toFixed(2)}</span>
+                      <span>${(impuestos || 0).toFixed(2)}</span>
                     </div>
 
                     <div className="flex justify-between text-sm">
                       <span>Envío</span>
-                      <span>{envio === 0 ? "Gratis" : `$${envio.toFixed(2)}`}</span>
+                      <span>{(envio || 0) === 0 ? "Gratis" : `$${(envio || 0).toFixed(2)}`}</span>
                     </div>
                   </div>
 
@@ -309,7 +309,7 @@ export default function CarritoPage() {
 
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span className="text-primary">${total.toFixed(2)}</span>
+                    <span className="text-primary">${(total || 0).toFixed(2)}</span>
                   </div>
 
                   <Button size="lg" className="w-full" asChild disabled={loading}>

@@ -47,29 +47,32 @@ const initialState: CartState = {
 
 function calculateTotals(items: CartItem[]): Omit<CartState, "items" | "loading"> {
   const subtotal = items.reduce((sum, item) => {
-    const price = item.precioOferta || item.precio
-    return sum + price * item.cantidad
+    const price = item.precioOferta || item.precio || 0
+    const quantity = item.cantidad || 0
+    const itemTotal = Number(price) * Number(quantity)
+    return sum + (isNaN(itemTotal) ? 0 : itemTotal)
   }, 0)
 
   const descuentos = items.reduce((sum, item) => {
-    if (item.precioOferta) {
-      return sum + (item.precio - item.precioOferta) * item.cantidad
+    if (item.precioOferta && item.precio && item.precio > item.precioOferta) {
+      const discount = (item.precio - item.precioOferta) * (item.cantidad || 0)
+      return sum + (isNaN(discount) ? 0 : discount)
     }
     return sum
   }, 0)
 
-  const impuestos = subtotal * 0.16
-  const envio = subtotal >= 50 ? 0 : 5.99
-  const total = subtotal + impuestos + envio
-  const itemCount = items.reduce((sum, item) => sum + item.cantidad, 0)
+  const impuestos = Number(subtotal) * 0.16
+  const envio = Number(subtotal) >= 50 ? 0 : 5.99
+  const total = Number(subtotal) + Number(impuestos) + Number(envio)
+  const itemCount = items.reduce((sum, item) => sum + (item.cantidad || 0), 0)
 
   return {
-    subtotal,
-    descuentos,
-    impuestos,
-    envio,
-    total,
-    itemCount,
+    subtotal: isNaN(subtotal) ? 0 : subtotal,
+    descuentos: isNaN(descuentos) ? 0 : descuentos,
+    impuestos: isNaN(impuestos) ? 0 : impuestos,
+    envio: isNaN(envio) ? 0 : envio,
+    total: isNaN(total) ? 0 : total,
+    itemCount: isNaN(itemCount) ? 0 : itemCount,
   }
 }
 

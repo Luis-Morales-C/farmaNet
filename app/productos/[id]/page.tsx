@@ -86,9 +86,9 @@ export default function ProductoPage() {
     )
   }
 
-  const precioFinal = producto.precioOferta || producto.precio
-  const tieneOferta = !!producto.precioOferta
-  const descuento = tieneOferta ? Math.round(((producto.precio - precioFinal) / producto.precio) * 100) : 0
+  const precioFinal = producto.precioOferta || producto.precio || 0
+  const tieneOferta = !!(producto.precioOferta && producto.precioOferta > 0)
+  const descuento = tieneOferta && producto.precio && producto.precio > 0 ? Math.round(((producto.precio - precioFinal) / producto.precio) * 100) : 0
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -143,10 +143,10 @@ export default function ProductoPage() {
               {/* Price */}
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  {tieneOferta && (
-                    <span className="text-xl text-muted-foreground line-through">${producto.precio.toFixed(2)}</span>
+                  {tieneOferta && producto.precio && producto.precio > 0 && (
+                    <span className="text-xl text-muted-foreground line-through">${(producto.precio || 0).toFixed(2)}</span>
                   )}
-                  <span className="text-3xl font-bold text-primary">${precioFinal.toFixed(2)}</span>
+                  <span className="text-3xl font-bold text-primary">${(precioFinal || 0).toFixed(2)}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">{producto.presentacion}</p>
               </div>
