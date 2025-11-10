@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  requiredRole?: "CLIENTE" | "ADMIN" | "FARMACEUTICO"
+  requiredRole?: "CLIENTE" | "ADMIN" | "FARMACEUTICO" | Array<"CLIENTE" | "ADMIN" | "FARMACEUTICO">
   redirectTo?: string
 }
 
@@ -17,13 +17,27 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = "/login" }
   const { user, isLoading, isAuthenticated } = useAuth()
   const router = useRouter()
 
+  // Función para verificar si el usuario tiene el rol requerido
+  const hasRequiredRole = (): boolean => {
+    if (!requiredRole) return true
+    
+    // Si es un array de roles, verificar si el usuario tiene alguno de ellos
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(user?.rol as any)
+    }
+    
+    // Si es un solo rol, verificar si el usuario tiene ese rol
+    return user?.rol === requiredRole
+  }
+
   useEffect(() => {
     console.log("[ProtectedRoute] Estado:", {
       isLoading,
       isAuthenticated,
       user: user?.nombre,
+      userRole: user?.rol,
       requiredRole,
-      hasRole: user?.rol === requiredRole,
+      hasRequiredRole: hasRequiredRole(),
     })
 
     if (!isLoading) {
@@ -33,7 +47,7 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = "/login" }
         return
       }
 
-      if (requiredRole && user?.rol !== requiredRole) {
+      if (requiredRole && !hasRequiredRole()) {
         console.log("[ProtectedRoute] ROL INCORRECTO - Redirigiendo a: /unauthorized")
         router.push("/unauthorized")
         return
@@ -54,7 +68,7 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = "/login" }
     )
   }
 
-  if (!isAuthenticated || (requiredRole && user?.rol !== requiredRole)) {
+  if (!isAuthenticated || (requiredRole && !hasRequiredRole())) {
     return null
   }
 

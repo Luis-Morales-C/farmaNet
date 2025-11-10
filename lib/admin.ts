@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
 
 class AdminService {
-  private async request<T>(
+  public async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
@@ -17,11 +17,21 @@ class AdminService {
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`)
+      const errorText = await response.text()
+      console.error(`Error en la solicitud a ${endpoint}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      })
+      throw new Error(`Error ${response.status}: ${errorText || response.statusText}`)
     }
 
-    const data = await response.json()
+    const text = await response.text()
+    if (!text){
+      return {} as T
+    }
+
+    const data = JSON.parse(text)
     return data
   }
 }
@@ -121,15 +131,21 @@ export interface ProductoForm {
 export const adminApi = {
   async getStats(): Promise<AdminStats> {
     try {
-      const response = await adminService.request<{ success: boolean; data: AdminStats; message: string }>(
-        `/api/admin/estadisticas`
-      )
+      console.log("Intentando obtener estadísticas desde: /api/admin/dashboard/stats")
+      const response = await adminService.request<any>(`/api/admin/dashboard/stats`)
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener estadísticas")
+      //Transformar la respuesta al formato esperado
+      const stats: AdminStats = {
+        totalProducts: response.totalProducts || 0,
+        totalUsers: response.totalUsers || 0,
+        totalOrders: response.totalOrders || 0,
+        totalRevenue: response.totalRevenue || 0,
+        lowStockProducts: response.lowStockProducts || 0,
+        pendingOrders: response.pendingOrders || 0,
       }
 
-      return response.data
+      console.log("Estadísticas obtenidas exitosamente")
+      return stats
     } catch (error) {
       console.error("Error getting admin stats:", error)
       // Fallback to mock data
@@ -146,15 +162,31 @@ export const adminApi = {
 
   async getUsers(): Promise<AdminUser[]> {
     try {
-      const response = await adminService.request<{ success: boolean; data: AdminUser[]; message: string }>(
-        `/api/admin/usuarios`
-      )
+      console.log("Intentando obtener usuarios desde: /api/admin/usuarios")
+      const response = await adminService.request<any>(`/api/admin/usuarios`)
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener usuarios")
+      // Transformar la respuesta al formato esperado
+      let users: any[] = []
+      if (Array.isArray(response)) {
+        users = response
+      } else if (response.data && Array.isArray(response.data)) {
+        users = response.data
+      } else if (response.usuarios && Array.isArray(response.usuarios)) {
+        users = response.usuarios
       }
 
-      return response.data
+      const mappedUsers: AdminUser[] = users.map((user: any) => ({
+        id: user.id?.toString() || '',
+        name: user.nombre || user.name || '',
+        email: user.email || '',
+        role: (user.rol || user.role || 'user') as "user" | "admin",
+        status: user.activo ? 'active' : 'inactive',
+        createdAt: user.fechaRegistro || user.createdAt || '',
+        lastLogin: user.ultimoLogin || user.lastLogin || undefined,
+      }))
+
+      console.log("Usuarios obtenidos exitosamente")
+      return mappedUsers
     } catch (error) {
       console.error("Error getting users:", error)
       // Fallback to mock data
@@ -183,17 +215,45 @@ export const adminApi = {
 
   async getOrders(): Promise<AdminOrder[]> {
     try {
-      const response = await adminService.request<{ success: boolean; data: AdminOrder[]; message: string }>(
-        `/api/admin/pedidos`
-      )
+      console.log("Intentando obtener pedidos desde: /api/admin/pedidos")
+      const response = await adminService.request<any>(`/api/admin/pedidos`)
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener pedidos")
+      // Transformar la respuesta al formato esperado
+      let orders: any[] = []
+      if (Array.isArray(response)) {
+        orders = response
+      } else if (response.data && Array.isArray(response.data)) {
+        orders = response.data
+      } else if (response.pedidos && Array.isArray(response.pedidos)) {
+        orders = response.pedidos
       }
 
-      return response.data
-    } catch (error) {
-      console.error("Error getting orders:", error)
+      const mappedOrders = orders.map((order: any) => ({
+        id: order.id,
+        userId: order.usuario?.id || order.userId || '',
+        userName: order.usuario?.nombre || order.userName || '',
+        userEmail: order.usuario?.email || order.userEmail || '',
+        items: Array.isArray(order.items) ? order.items.map((item: any) => ({
+          productId: item.producto?.id || item.productId || '',
+          productName: item.producto?.nombre || item.productName || '',
+          quantity: item.cantidad || item.quantity || 0,
+          price: item.precio || item.price || 0,
+        })) : [],
+        total: order.total || 0,
+        status: order.estado || order.status || 'pending',
+        createdAt: order.fecha || order.createdAt || '',
+        shippingAddress: order.direccionEnvio || order.shippingAddress || {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+        },
+      }))
+
+      console.log("Pedidos obtenidos exitosamente")
+      return mappedOrders
+} catch (error) {
+      console.error("Error getting orders:",error)
       // Fallback to mock data
       return [
         {
@@ -203,7 +263,7 @@ export const adminApi = {
           userEmail: "juan@email.com",
           items: [
             { productId: "1", productName: "Paracetamol 500mg", quantity: 2, price: 8.5 },
-            { productId: "2", productName: "Vitamina C", quantity: 1, price: 15.99 },
+            { productId: "2", productName:"Vitamina C", quantity: 1, price: 15.99 },
           ],
           total: 32.99,
           status: "pending",
@@ -214,22 +274,40 @@ export const adminApi = {
             state: "Cundinamarca",
             zipCode: "110111",
           },
-        },
+},
       ]
     }
-  },
+},
 
   async getProducts(): Promise<AdminProduct[]> {
     try {
-      const response = await adminService.request<{ success: boolean; data: AdminProduct[]; message: string }>(
-        `/api/admin/productos`
-      )
+      console.log("Intentando obtener productos desde: /api/admin/productos")
+      const response = await adminService.request<any>(`/api/admin/productos`)
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener productos")
+      // Transformar la respuesta al formato esperado
+      let products: any[] = []
+      if (Array.isArray(response)) {
+        products = response
+      } else if (response.data && Array.isArray(response.data)) {
+        products = response.data
+      } else if (response.productos && Array.isArray(response.productos)) {
+        products = response.productos
       }
 
-      return response.data
+      const mappedProducts: AdminProduct[] = products.map((product: any) => ({
+        id: product.id?.toString() || '',
+        name: product.nombre || product.name || '',
+        description: product.descripcion || product.description || '',
+        price: product.precio || product.price || 0,
+        stock: product.stock || product.cantidad || 0,
+        category: product.categoria?.nombre || product.category || '',
+        image: product.imagenUrl || product.image || '',
+        status: (product.activo ? 'active' : 'inactive') as "active" | "inactive",
+        createdAt: product.fechaRegistro || product.createdAt || '',
+      }))
+
+      console.log("Productos obtenidos exitosamente")
+return mappedProducts
     } catch (error) {
       console.error("Error getting products:", error)
       // Fallback to mock data
@@ -262,38 +340,66 @@ export const adminApi = {
 
   async getCategories(): Promise<Category[]> {
     try {
-      const response = await adminService.request<{ success: boolean; data: any[]; message: string }>(
-        `/api/categorias/obtener`
-      )
+      console.log("Intentando obtener categorías desde: /api/categorias/obtener")
+      const response = await adminService.request<any>(`/api/categorias/obtener`)
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener categorías")
+      // Transformar la respuesta al formato esperado
+      let categories: any[] = []
+      if (Array.isArray(response)) {
+        categories = response
+      } else if (response.data && Array.isArray(response.data)) {
+        categories = response.data
+      } else if (response.categorias && Array.isArray(response.categorias)) {
+        categories = response.categorias
       }
 
-      return response.data.map((cat: any) => ({
-        id: cat.id,
-        name: cat.nombre,
-        description: cat.descripcion || '',
-        productCount: 0,
-        status: "active" as const
+      const mappedCategories: Category[] = categories.map((cat: any) => ({
+        id: cat.id?.toString() || '',
+        name: cat.nombre || cat.name || '',
+        description: cat.descripcion || cat.description || '',
+        productCount: cat.productCount !== undefined ? cat.productCount : (cat.cantidadProductos || 0),
+        status: (cat.activo ? 'active' : 'inactive') as "active" | "inactive",
       }))
-    } catch (error) {
+
+      console.log("Categorías obtenidas exitosamente:", mappedCategories)
+      return mappedCategories
+   } catch (error) {
       console.error("Error getting categories:", error)
       throw error
-    }
+}
   },
 
-  async getPromotions(): Promise<Promotion[]> {
+async getPromotions(): Promise<Promotion[]> {
     try {
-      const response = await adminService.request<{ success: boolean; data: Promotion[]; message: string }>(
-        `/api/admin/promociones`
-      )
+      console.log("Intentando obtener promociones desde: /api/ofertas")
+      const response = await adminService.request<any>(`/api/ofertas`)
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener promociones")
+      // Transformar la respuesta al formato esperado
+      let promotions: any[] = []
+      if (Array.isArray(response)) {
+        promotions = response
+      } else if (response.data && Array.isArray(response.data)) {
+        promotions = response.data
+      } else if (response.ofertas && Array.isArray(response.ofertas)) {
+        promotions = response.ofertas
       }
 
-      return response.data
+      const mappedPromotions: Promotion[] = promotions.map((promo: any) => ({
+        id: promo.id?.toString() || '',
+        name: promo.nombre || promo.name || '',
+        description: promo.descripcion || promo.description || '',
+        type: (promo.tipo || promo.type || 'percentage') as "percentage" | "fixed",
+        value: promo.valor || promo.value || 0,
+        startDate: promo.fechaInicio || promo.startDate || '',
+        endDate: promo.fechaFin || promo.endDate || '',
+        status: (promo.activo ? 'active' : 'inactive') as "active" | "inactive",
+        applicableProducts: Array.isArray(promo.productosAplicables) 
+          ? promo.productosAplicables.map((p: any) => (p.id || p).toString()) 
+          : []
+      }))
+
+      console.log("Promociones obtenidas exitosamente")
+      return mappedPromotions
     } catch (error) {
       console.error("Error getting promotions:", error)
       // Fallback to mock data
@@ -315,7 +421,8 @@ export const adminApi = {
 
   async createProduct(product: ProductoForm): Promise<any> {
     try {
-      const response = await adminService.request<{ success: boolean; data: any; message: string }>(
+      console.log("Intentando crear producto en: /api/productos/crear")
+      const response = await adminService.request<any>(
         `/api/productos/crear`,
         {
           method: "POST",
@@ -323,14 +430,11 @@ export const adminApi = {
         }
       )
 
-      if (!response.success) {
-        throw new Error(response.message || "Error al crear el producto")
-      }
-
-      return response.data
+      console.log("Producto creado exitosamente")
+      return response
     } catch (error) {
       console.error("Error creating product:", error)
       throw error
     }
-  },
+},
 }

@@ -240,7 +240,7 @@ function AdminDashboard() {
 
 export default function AdminPage() {
   return (
-    <ProtectedRoute requiredRole="ADMIN">
+    <ProtectedRoute requiredRole={["ADMIN", "ADMINISTRADOR"]}>
       <AdminDashboard />
     </ProtectedRoute>
   )

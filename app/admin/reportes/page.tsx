@@ -36,29 +36,11 @@ export default function AdminReports() {
       }
     }
 
-    if (user?.rol === "ADMIN") {
-      loadStats()
-    }
-  }, [user])
+    // Removida la verificación de rol aquí ya que se hace en el nivel superior
+    loadStats()
+  }, [])
 
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Acceso Denegado</h2>
-              <p className="text-muted-foreground mb-4">No tienes permisos para acceder a esta sección.</p>
-              <Button asChild>
-                <Link href="/admin">Volver al Panel</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  // Removida la verificación de acceso denegado aquí ya que se hace en el nivel superior
 
   return (
     <div className="container mx-auto px-4 py-8">

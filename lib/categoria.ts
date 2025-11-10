@@ -1,6 +1,6 @@
-// lib/categorias.ts
+//lib/categorias.ts
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // ==================== INTERFACES ====================
 
@@ -50,7 +50,7 @@ interface FetchOptions {
   signal?: AbortSignal;
 }
 
-// ==================== SERVICIO ====================
+//==================== SERVICIO ====================
 
 class CategoriaService {
   private baseURL: string;
@@ -69,7 +69,12 @@ class CategoriaService {
     endpoint: string,
     options: FetchOptions = {}
   ): Promise<T> {
+    // Asegurarse de que el endpoint comience con /
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/' + endpoint;
+    }
     const url = `${this.baseURL}${endpoint}`;
+    console.log(`Realizando petición a: ${url}`);
     
     const config: RequestInit = {
       method: options.method || 'GET',
@@ -86,15 +91,18 @@ class CategoriaService {
 
     try {
       const response = await fetch(url, config);
+      console.log(`Respuesta de ${url}:`, response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Error desconocido');
+        console.error(`Error completo de ${url}:`, errorText);
         throw new Error(
           `Error ${response.status}: ${response.statusText}. ${errorText}`
         );
       }
 
       const text = await response.text();
+      console.log(`Texto de respuesta de ${url}:`, text);
       if (!text) {
         return null as T;
       }
@@ -134,15 +142,29 @@ class CategoriaService {
     return dtos.map((dto) => this.transformCategoria(dto));
   }
 
-  // ==================== MÉTODOS PÚBLICOS ====================
+  // ====================MÉTODOS PÚBLICOS ====================
 
-  /**
+/**
    * Obtener todas las categorías activas
-   */
+  */
   async getCategorias(signal?: AbortSignal): Promise<Categoria[]> {
     try {
-      const dtos = await this.fetchAPI<CategoriaDTO[]>('/obtener', { signal });
-      return this.transformCategorias(dtos);
+      // Probar diferentes endpoints
+      const endpoints = ['/categorias/obtener', '/obtener', '/', '/all', '/listar'];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Intentando obtener categorías desde: ${this.baseURL}${endpoint}`);
+          const dtos = await this.fetchAPI<CategoriaDTO[]>(endpoint, { signal });
+          console.log(`Categorías obtenidas exitosamente desde: ${endpoint}`, dtos);
+          return this.transformCategorias(dtos);
+        } catch (error) {
+          console.log(`Endpoint ${endpoint} no disponible:`, error.message);
+          continue;
+        }
+      }
+      
+      throw new Error('No se encontró un endpoint válido para obtener categorías');
     } catch (error) {
       console.error('Error al obtener todas las categorías:', error);
       throw error;
@@ -154,10 +176,26 @@ class CategoriaService {
    */
   async getCategoriasRaiz(signal?: AbortSignal): Promise<Categoria[]> {
     try {
-      // Usar el mismo endpoint que getCategorias pero filtrar solo las raíz localmente
-      const dtos = await this.fetchAPI<CategoriaDTO[]>('/obtener', { signal });
-      const categoriasRaiz = dtos.filter(cat => cat.esCategoriaRaiz);
-      return this.transformCategorias(categoriasRaiz);
+      // Probar diferentes endpoints para categorías raíz
+      const endpoints = ['/categorias/raiz', '/raiz'];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Intentando obtener categorías raíz desde: ${this.baseURL}${endpoint}`);
+          const dtos = await this.fetchAPI<CategoriaDTO[]>(endpoint, { signal });
+          console.log(`Categorías raíz obtenidas exitosamente desde: ${endpoint}`, dtos);
+          return this.transformCategorias(dtos);
+        } catch (error) {
+          console.log(`Endpoint ${endpoint} no disponible para categorías raíz:`, error.message);
+          continue;
+        }
+      }
+      
+      // Si no encontramos endpoint específico, intentar obtener todas y filtrar localmente
+      console.log("Intentando obtener todas las categorías y filtrar localmente");
+      const todas = await this.getCategorias(signal);
+      const raiz = todas.filter(cat => cat.esCategoriaRaiz);
+      return raiz;
     } catch (error) {
       console.error('Error al obtener categorías raíz:', error);
       throw error;
@@ -187,8 +225,8 @@ class CategoriaService {
     }
   }
 
-  /**
-   * Buscar categorías por nombre
+/**
+ *Buscar categoríaspor nombre
    */
   async buscarCategorias(
     nombre: string,
@@ -209,7 +247,6 @@ class CategoriaService {
       );
       
       const categorias = this.transformCategorias(dtos);
-      
       return {
         categorias,
         total: categorias.length,
@@ -222,7 +259,7 @@ class CategoriaService {
   }
 
   /**
-   * Obtener una categoría por ID
+   * Obtener unacategoría porID
    */
   async getCategoriaPorId(id: string, signal?: AbortSignal): Promise<Categoria | null> {
     if (!id?.trim()) {
@@ -240,8 +277,8 @@ class CategoriaService {
   }
 
   /**
-   * Obtener una categoría con sus subcategorías
-   */
+* Obtener una categoría con sus subcategorías
+*/
   async getCategoriaConSubcategorias(
     categoriaId: string,
     signal?: AbortSignal
@@ -271,7 +308,7 @@ class CategoriaService {
   }
 
   /**
-   * Enriquecer categorías con subcategorías
+   * Enriquecercategorías con subcategorías
    */
   async enriquecerConSubcategorias(
     categorias: Categoria[],
@@ -299,7 +336,7 @@ class CategoriaService {
     }
   }
 
-  /**
+ /**
    * Construir jerarquía de categorías
    */
   construirJerarquia(categorias: Categoria[]): CategoriaJerarquia[] {
@@ -334,8 +371,8 @@ class CategoriaService {
     return raices;
   }
 
-  /**
-   * Obtener árbol completo de categorías
+ /**
+  * Obtenerárbolcompleto de categorías
    */
   async getArbolCompleto(signal?: AbortSignal): Promise<CategoriaJerarquia[]> {
     try {
@@ -347,8 +384,8 @@ class CategoriaService {
     }
   }
 
-  /**
-   * Obtener ruta breadcrumb de una categoría
+ /**
+   * Obtener rutabreadcrumb de una categoría
    */
   async getBreadcrumb(
     categoriaId: string,
@@ -382,7 +419,7 @@ class CategoriaService {
     }
   }
 
-  /**
+ /**
    * Filtrar categorías localmente
    */
   filtrarLocal(
@@ -460,9 +497,9 @@ class CategoriaService {
     });
   }
 
-  /**
-   * Agrupar categorías por campo
-   */
+/**
+* Agruparcategorías por campo
+  */
   agrupar(
     categorias: Categoria[],
     campo: keyof Categoria
@@ -481,9 +518,9 @@ class CategoriaService {
   }
 
   /**
-   * Verificar si tiene subcategorías
+* Verificar si tiene subcategorías
    */
-  async tieneSubcategorias(
+ async tieneSubcategorias(
     categoriaId: string,
     signal?: AbortSignal
   ): Promise<boolean> {
@@ -491,37 +528,37 @@ class CategoriaService {
       const subcategorias = await this.getSubcategorias(categoriaId, signal);
       return subcategorias.length > 0;
     } catch (error) {
-      console.error(`Error al verificar subcategorías de ${categoriaId}:`, error);
+      console.error(`Error al verificarsubcategorías de ${categoriaId}:`, error);
       return false;
     }
   }
 
-  /**
-   * Contar descendientes de una categoría
+ /**
+   * Contar descendientes deuna categoría
    */
-  async contarDescendientes(
+async contarDescendientes(
     categoriaId: string,
     signal?: AbortSignal
   ): Promise<number> {
     try {
-      const todas = await this.getCategorias(signal);
+      consttodas= await this.getCategorias(signal);
       const descendientes = new Set<string>();
 
-      const buscarDescendientes = (id: string) => {
+      const buscarDescendientes = (id: string) =>{
         todas.forEach((cat) => {
-          if (cat.categoriaPadreId === id && !descendientes.has(cat.id)) {
+          if(cat.categoriaPadreId === id && !descendientes.has(cat.id)) {
             descendientes.add(cat.id);
-            buscarDescendientes(cat.id);
+buscarDescendientes(cat.id);
           }
-        });
+       });
       };
 
       buscarDescendientes(categoriaId);
-      return descendientes.size;
-    } catch (error) {
+return descendientes.size;
+    } catch (error){
       console.error(`Error al contar descendientes de ${categoriaId}:`, error);
       return 0;
-    }
+}
   }
 }
 

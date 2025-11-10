@@ -1,9 +1,38 @@
+"use client"
+
 import Link from "next/link"
-import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import { Facebook, Twitter, Instagram, Mail, Phone, MapPin, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/lib/auth"
+import { useRouter } from "next/navigation"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useState } from "react"
 
 export function Footer() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
+
+  const handleAdminAccess = () => {
+    // Verificar si el usuario tiene rol de administrador (ADMIN o ADMINISTRADOR)
+    if (user?.rol === "ADMIN" || user?.rol === "ADMINISTRADOR") {
+      router.push("/admin")
+    } else {
+      setAlertMessage("No tienes acceso al panel de administración. Solo los administradores pueden acceder.")
+      setShowAlert(true)
+    }
+  }
+
   return (
     <footer className="bg-card border-t">
       <div className="container mx-auto px-4 py-12">
@@ -127,9 +156,35 @@ export function Footer() {
             <Link href="/aviso-legal" className="hover:text-primary transition-colors">
               Aviso Legal
             </Link>
+            {/* Botón de administrador discreto */}
+            {user && (
+              <button 
+                onClick={handleAdminAccess}
+                className="text-muted-foreground hover:text-primary transition-colors flex items-center"
+                aria-label="Acceso administrador"
+              >
+                <Shield className="h-4 w-4 mr-1" />
+                Admin
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Alert Dialog for unauthorized access */}
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Acceso Denegado</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowAlert(false)}>Entendido</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </footer>
   )
 }

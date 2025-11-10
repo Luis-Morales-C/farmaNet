@@ -22,23 +22,23 @@ export default function AdminUsers() {
     try {
       setLoading(true)
       const response = await usuariosService.listarUsuarios()
-      setUsuarios(response.usuarios)
+      setUsuarios(response.usuarios || []) // Asegurarse de que sea un array
     } catch (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "No se pudo cargar los usuarios",
         variant: "destructive",
       })
+      setUsuarios([]) // En caso de error, establecer un array vacío
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (user?.rol === "ADMIN") {
-      cargarUsuarios()
-    }
-  }, [user])
+    // Removida la verificación de rol aquí ya que se hace en el nivel superior
+    cargarUsuarios()
+  }, [])
 
   const handleBuscar = async () => {
     if (!searchTerm.trim()) {
@@ -49,38 +49,22 @@ export default function AdminUsers() {
     try {
       setLoading(true)
       const response = await usuariosService.buscarUsuarios(searchTerm)
-      setUsuarios(response.usuarios)
+      setUsuarios(response.usuarios || []) // Asegurarse de que sea un array
     } catch (error) {
       toast({
         title: "Error en la búsqueda",
         description: error instanceof Error ? error.message : "No se pudo realizar la búsqueda",
         variant: "destructive",
       })
+      setUsuarios([]) // En caso de error, establecer un array vacío
     } finally {
       setLoading(false)
     }
   }
 
-  if (!user || user.rol !== "ADMIN") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Acceso Denegado</h2>
-              <p className="text-muted-foreground mb-4">No tienes permisos para acceder a esta sección.</p>
-              <Button asChild>
-                <Link href="/admin">Volver al Panel</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  // Removida la verificación de acceso denegado aquí ya que se hace en el nivel superior
 
-  const usuariosFiltrados = usuarios.filter(
+  const usuariosFiltrados = (usuarios || []).filter( // Asegurarse de que usuarios sea un array
     (u) =>
       u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -117,7 +101,7 @@ export default function AdminUsers() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Usuarios ({usuariosFiltrados.length} de {usuarios.length})</CardTitle>
+          <CardTitle>Usuarios ({usuariosFiltrados.length} de {usuarios?.length || 0})</CardTitle>
         </CardHeader>
         <CardContent>
           <UserList usuarios={usuariosFiltrados} onRefresh={cargarUsuarios} isLoading={loading} />
