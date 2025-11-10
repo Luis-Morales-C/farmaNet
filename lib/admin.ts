@@ -281,18 +281,20 @@ export const adminApi = {
 
   async getProducts(): Promise<AdminProduct[]> {
     try {
-      console.log("Intentando obtener productos desde: /api/inventario")
-      const response = await adminService.request<any>(`/api/inventario`)
+      console.log("Intentando obtener productos desde: /api/admin/productos")
+      const response = await adminService.request<any>(`/api/admin/productos`)
 
       // Transformar la respuesta al formato esperado
       let products: any[] = []
       if (Array.isArray(response)) {
         products = response
-      } else if (response.data && Array.isArray(response.data)) {
-        products = response.data
+      } else if (response.data && response.data.productos && Array.isArray(response.data.productos)) {
+        products = response.data.productos
       } else if (response.productos && Array.isArray(response.productos)) {
         products = response.productos
       }
+
+      console.log("Productos recibidos del backend:", products)
 
       const mappedProducts: AdminProduct[] = products.map((product: any) => ({
         id: product.id?.toString() || '',
@@ -301,13 +303,14 @@ export const adminApi = {
         price: product.precio || product.price || 0,
         stock: product.stock || product.cantidad || 0,
         category: product.categoria?.nombre || product.category || '',
-        image: product.imagenUrl || product.image || '',
+        image: product.imagen || product.imagenUrl || product.image || '',
         status: (product.activo ? 'active' : 'inactive') as "active" | "inactive",
         createdAt: product.fechaRegistro || product.createdAt || '',
       }))
 
+      console.log("Productos mapeados:", mappedProducts)
       console.log("Productos obtenidos exitosamente")
-return mappedProducts
+      return mappedProducts
     } catch (error) {
       console.error("Error getting products:", error)
       // Fallback to mock data

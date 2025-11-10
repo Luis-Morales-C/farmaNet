@@ -1,5 +1,5 @@
 // types/productos.ts
-import { catalogoService } from './catalogo.service'
+export { catalogoService } from './catalogo.service'
 
 export interface Producto {
   id: string

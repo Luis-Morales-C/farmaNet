@@ -98,6 +98,9 @@ export function Header() {
             <Link href="/ofertas" className="text-sm font-medium hover:text-primary transition-colors">
               Ofertas
             </Link>
+            <Link href="/sobre-nosotros" className="text-sm font-medium hover:text-primary transition-colors">
+              Nosotros
+            </Link>
           </nav>
 
           {/* User Actions */}
@@ -245,6 +248,13 @@ export function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Ofertas
+              </Link>
+              <Link
+                href="/sobre-nosotros"
+                className="px-2 py-1 text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Nosotros
               </Link>
             </nav>
           </div>

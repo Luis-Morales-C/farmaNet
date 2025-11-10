@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/products/product-card"
-import { productService, type Producto, type CategoriaDTO } from "@/lib/products"
+import { productService, catalogoService, type Producto, type CategoriaDTO } from "@/lib/products"
 
 // Función para formatear precios en pesos colombianos
 const formatCOP = (precio: number): string => {
@@ -72,9 +72,12 @@ export default function CatalogoPage() {
           console.error('Error cargando categorías:', err)
           return []
         }),
-        productService.getProductos({ activo: true }).catch(err => {
-          console.error('Error cargando productos:', err)
-          return []
+        catalogoService.obtenerCatalogo().catch(err => {
+          console.error('Error cargando productos del catálogo:', err)
+          return productService.getProductos({ activo: true }).catch(err2 => {
+            console.error('Error cargando productos:', err2)
+            return []
+          })
         })
       ])
 
@@ -119,7 +122,7 @@ export default function CatalogoPage() {
         ordenarPor,
       }
 
-      const data = await productService.getProductos(filters)
+      const data = await catalogoService.obtenerProductosConFiltros(filters)
       console.log('Productos filtrados:', data)
       setProductos(data)
       setError(null)

@@ -36,7 +36,7 @@ export function Footer() {
   return (
     <footer className="bg-card border-t">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -83,33 +83,6 @@ export function Footer() {
               <li>
                 <Link href="/sobre-nosotros" className="text-muted-foreground hover:text-primary transition-colors">
                   Sobre Nosotros
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Customer Service */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Atención al Cliente</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/ayuda" className="text-muted-foreground hover:text-primary transition-colors">
-                  Centro de Ayuda
-                </Link>
-              </li>
-              <li>
-                <Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors">
-                  Contacto
-                </Link>
-              </li>
-              <li>
-                <Link href="/envios" className="text-muted-foreground hover:text-primary transition-colors">
-                  Información de Envíos
-                </Link>
-              </li>
-              <li>
-                <Link href="/devoluciones" className="text-muted-foreground hover:text-primary transition-colors">
-                  Devoluciones
                 </Link>
               </li>
             </ul>
