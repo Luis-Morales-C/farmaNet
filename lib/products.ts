@@ -256,13 +256,23 @@ export const productService = {
 
 
   mapearProductoDTO(dto: any): Producto {
+    // Sanitizar URL de imagen: reemplazar espacios y caracteres especiales
+    const sanitizarUrl = (url: string): string => {
+      if (!url) return '/placeholder-product.jpg'
+      // Reemplazar espacios con %20 en URLs de Cloudinary
+      if (url.includes('cloudinary')) {
+        return url.replace(/\s/g, '%20')
+      }
+      return url
+    }
+
     return {
       id: dto.id,
       nombre: dto.nombre,
       descripcion: dto.descripcion || 'Información del producto disponible próximamente.',
       precio: parseFloat(dto.precio) || 0,
       precioOferta: dto.precioOferta ? parseFloat(dto.precioOferta) : undefined,
-      imagen: dto.imagen || '/placeholder-product.jpg', // Campo unificado
+      imagen: sanitizarUrl(dto.imagen) || '/placeholder-product.jpg', // Campo unificado
       categoriaId: dto.categoriaId || '',
       categoriaNombre: dto.categoriaNombre || 'Sin categoría',
       laboratorio: dto.laboratorio || 'Genérico',

@@ -3,17 +3,11 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, ShoppingCart, User, Menu, X, Heart, Bell } from "lucide-react"
+import { Search, ShoppingCart, User, Menu, X, Heart, Bell, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,9 +31,24 @@ export function Header() {
   const { itemCount } = useCart()
   const router = useRouter()
 
+  console.log("[Header] Estado de autenticación:", {
+    user: user?.nombre,
+    isAuthenticated,
+    isLoading,
+    rol: user?.rol,
+  })
+
   const handleLogout = async () => {
     await logout()
     router.push("/login")
+  }
+
+  const handleNavigate = (path: string) => {
+    console.log("[Header] Navegando a:", path, {
+      isAuthenticated,
+      user: user?.nombre,
+    })
+    router.push(path)
   }
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -72,6 +81,9 @@ export function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
               />
+              <span className="text-xs text-muted-foreground absolute right-2 bottom-1">
+                {isAuthenticated ? "✓ Auth" : "✗ No Auth"}
+              </span>
             </div>
           </div>
 
@@ -119,7 +131,43 @@ export function Header() {
             {/* User Menu */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">{user?.nombre} {user?.apellido}</span>
+                {/* Gestionar Perfil Button - visible for all authenticated users */}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    console.log("[Header] Click en 'Mi Perfil'", {
+                      isAuthenticated,
+                      user: user?.nombre,
+                      rol: user?.rol,
+                    })
+                    handleNavigate("/perfil")
+                  }}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Mi Perfil
+                </Button>
+
+                {/* Admin Panel Button - only for admins */}
+                {user?.rol === "ADMIN" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      console.log("[Header] Click en 'Usuarios'", {
+                        isAuthenticated,
+                        user: user?.nombre,
+                        rol: user?.rol,
+                      })
+                      handleNavigate("/admin/usuarios")
+                    }}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Usuarios
+                  </Button>
+                )}
+
+                {/* Logout Button */}
                 <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="sm">

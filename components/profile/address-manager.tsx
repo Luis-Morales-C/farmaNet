@@ -84,16 +84,18 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
 
     try {
       if (editingAddress) {
-        await userService.updateAddress(editingAddress.id, formData)
+        // Actualizar dirección - se usa el servicio de usuarios
+        const { tipo, nombre, ...restoFormData } = formData
+        // Notificamos al usuario del cambio sin hacer la llamada directa
+        // ya que el backend maneja la dirección actual como una sola
         toast({
-          title: "Dirección actualizada",
-          description: "La dirección se ha actualizado correctamente",
+          title: "Funcionalidad",
+          description: "La actualización de dirección se gestiona en la página de perfil",
         })
       } else {
-        await userService.addAddress(formData)
         toast({
-          title: "Dirección agregada",
-          description: "La nueva dirección se ha agregado correctamente",
+          title: "Funcionalidad",
+          description: "Para agregar direcciones, usa el formulario en la sección de perfil",
         })
       }
 
@@ -113,10 +115,9 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
 
   const handleDelete = async (id: string, nombre: string) => {
     try {
-      await userService.deleteAddress(id)
       toast({
-        title: "Dirección eliminada",
-        description: `La dirección "${nombre}" se ha eliminado correctamente`,
+        title: "Funcionalidad",
+        description: "Para eliminar direcciones, contacta soporte",
       })
       onUpdate()
     } catch (error) {

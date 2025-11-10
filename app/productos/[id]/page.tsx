@@ -12,6 +12,8 @@ import { useCart } from "@/lib/cart"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { type Producto, productService } from "@/lib/products"
+import { CommentForm } from "@/components/products/comment-form"
+import { CommentsSection } from "@/components/products/comments-section"
 
 export default function ProductoPage() {
   const params = useParams()
@@ -21,6 +23,7 @@ export default function ProductoPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [cantidad, setCantidad] = useState(1)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [refreshComments, setRefreshComments] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -226,7 +229,7 @@ export default function ProductoPage() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="descripcion">Descripción</TabsTrigger>
               <TabsTrigger value="informacion">Información</TabsTrigger>
-              <TabsTrigger value="reseñas">Reseñas ({producto.totalReviews})</TabsTrigger>
+              <TabsTrigger value="comentarios">Comentarios</TabsTrigger>
             </TabsList>
 
             <TabsContent value="descripcion" className="mt-6">
@@ -302,17 +305,15 @@ export default function ProductoPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="reseñas" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Reseñas de Clientes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Las reseñas se mostrarán aquí próximamente.</p>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="comentarios" className="mt-6 space-y-6">
+              <CommentForm 
+                productoId={producto.id} 
+                onCommentAdded={() => setRefreshComments(!refreshComments)}
+              />
+              <CommentsSection 
+                productoId={producto.id}
+                triggerRefresh={refreshComments}
+              />
             </TabsContent>
           </Tabs>
         </div>

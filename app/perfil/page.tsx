@@ -9,8 +9,8 @@ import { ProtectedRoute } from "@/components/auth/protected-route"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { EditProfileForm } from "@/components/profile/edit-profile-form"
+import { EditAddressForm } from "@/components/profile/edit-address-form"
 import { ChangePasswordForm } from "@/components/profile/change-password-form"
-import { AddressManager } from "@/components/profile/address-manager"
 import { PreferencesForm } from "@/components/profile/preferences-form"
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog"
 import { type UserProfile, userService } from "@/lib/user"
@@ -20,16 +20,24 @@ export default function PerfilPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("perfil")
 
+  console.log("[PerfilPage] Página de perfil montada", {
+    profileLoaded: !!profile,
+    isLoading,
+  })
+
   useEffect(() => {
+    console.log("[PerfilPage] useEffect - Cargando perfil")
     loadProfile()
   }, [])
 
   const loadProfile = async () => {
     try {
+      console.log("[PerfilPage] Llamando a userService.getProfile()")
       const data = await userService.getProfile()
+      console.log("[PerfilPage] Perfil cargado:", data)
       setProfile(data)
     } catch (error) {
-      console.error("Error loading profile:", error)
+      console.error("[PerfilPage] Error loading profile:", error)
     } finally {
       setIsLoading(false)
     }
@@ -137,11 +145,11 @@ export default function PerfilPage() {
               <TabsContent value="direcciones" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Direcciones de Entrega</CardTitle>
-                    <CardDescription>Gestiona tus direcciones de entrega para tus pedidos</CardDescription>
+                    <CardTitle>Dirección de Entrega</CardTitle>
+                    <CardDescription>Actualiza tu dirección de entrega para tus pedidos</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AddressManager addresses={profile.direcciones} onUpdate={loadProfile} />
+                    <EditAddressForm profile={profile} onUpdate={handleProfileUpdate} />
                   </CardContent>
                 </Card>
               </TabsContent>

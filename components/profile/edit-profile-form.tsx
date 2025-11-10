@@ -3,13 +3,14 @@
 import type React from "react"
 
 import { useState } from "react"
-import { User, Mail, Phone, Calendar } from "lucide-react"
+import { User, Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { type UserProfile, userService } from "@/lib/user"
+import { type UserProfile } from "@/lib/user"
+import { usuariosService } from "@/lib/usuarios"
+import { useAuth } from "@/lib/auth"
 
 interface EditProfileFormProps {
   profile: UserProfile
@@ -18,13 +19,12 @@ interface EditProfileFormProps {
 
 export function EditProfileForm({ profile, onUpdate }: EditProfileFormProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     nombre: profile.nombre,
     apellido: profile.apellido,
     telefono: profile.telefono || "",
-    fechaNacimiento: profile.fechaNacimiento || "",
-    genero: profile.genero || "",
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,17 +32,28 @@ export function EditProfileForm({ profile, onUpdate }: EditProfileFormProps) {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "No se pudo identificar tu usuario",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      const updatedProfile = await userService.updateProfile(formData)
-      onUpdate(updatedProfile)
+      const resultado = await usuariosService.actualizarPerfil(user.id, formData)
+      const perfilActualizado: UserProfile = {
+        ...profile,
+        nombre: resultado.nombre,
+        apellido: resultado.apellido,
+        telefono: resultado.telefono,
+      }
+      onUpdate(perfilActualizado)
       toast({
         title: "Perfil actualizado",
         description: "Tu información personal se ha actualizado correctamente",
@@ -50,7 +61,7 @@ export function EditProfileForm({ profile, onUpdate }: EditProfileFormProps) {
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudo actualizar el perfil. Intenta nuevamente.",
+        description: error instanceof Error ? error.message : "No se pudo actualizar el perfil",
         variant: "destructive",
       })
     } finally {
@@ -72,6 +83,8 @@ export function EditProfileForm({ profile, onUpdate }: EditProfileFormProps) {
               onChange={handleInputChange}
               className="pl-10"
               required
+              minLength={2}
+              maxLength={50}
             />
           </div>
         </div>
@@ -87,6 +100,8 @@ export function EditProfileForm({ profile, onUpdate }: EditProfileFormProps) {
               onChange={handleInputChange}
               className="pl-10"
               required
+              minLength={2}
+              maxLength={50}
             />
           </div>
         </div>
@@ -114,40 +129,13 @@ export function EditProfileForm({ profile, onUpdate }: EditProfileFormProps) {
             value={formData.telefono}
             onChange={handleInputChange}
             className="pl-10"
-            placeholder="+1 234 567 8900"
+            placeholder="10-15 dígitos"
+            pattern="^\d{10,15}$"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="fechaNacimiento"
-              name="fechaNacimiento"
-              type="date"
-              value={formData.fechaNacimiento}
-              onChange={handleInputChange}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="genero">Género</Label>
-          <Select value={formData.genero} onValueChange={(value) => handleSelectChange("genero", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona tu género" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="masculino">Masculino</SelectItem>
-              <SelectItem value="femenino">Femenino</SelectItem>
-              <SelectItem value="otro">Otro</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Formato: 10-15 dígitos (ej: 1234567890)
+        </p>
       </div>
 
       <Button type="submit" disabled={isLoading}>

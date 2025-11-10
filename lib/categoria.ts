@@ -154,8 +154,10 @@ class CategoriaService {
    */
   async getCategoriasRaiz(signal?: AbortSignal): Promise<Categoria[]> {
     try {
-      const dtos = await this.fetchAPI<CategoriaDTO[]>('/raiz', { signal });
-      return this.transformCategorias(dtos);
+      // Usar el mismo endpoint que getCategorias pero filtrar solo las raíz localmente
+      const dtos = await this.fetchAPI<CategoriaDTO[]>('/obtener', { signal });
+      const categoriasRaiz = dtos.filter(cat => cat.esCategoriaRaiz);
+      return this.transformCategorias(categoriasRaiz);
     } catch (error) {
       console.error('Error al obtener categorías raíz:', error);
       throw error;

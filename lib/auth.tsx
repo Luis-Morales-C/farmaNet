@@ -39,11 +39,22 @@ export const authService = {
     }
 
     const data = await response.json()
-    const token = data.token || "no-token"
-    const user = data.usuario || data.user || data
+    console.log("[authService.login] Respuesta del servidor:", data)
+    
+    // El servidor devuelve: { success, data: { id, nombre, apellido, email, rol, token }, ... }
+    const token = data.data?.token || data.token || "no-token"
+    const user = data.data || data.usuario || data.user || data
+
+    console.log("[authService.login] Token extraído:", token)
+    console.log("[authService.login] Usuario extraído:", user)
+    console.log("[authService.login] Estructura del usuario:", { id: user?.id, nombre: user?.nombre, email: user?.email, rol: user?.rol })
 
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
+
+    console.log("[authService.login] Verificando localStorage:")
+    console.log("[authService.login] - auth-token:", localStorage.getItem("auth-token"))
+    console.log("[authService.login] - user:", localStorage.getItem("user"))
 
     // Disparar evento para que el carrito se sincronice
     window.dispatchEvent(new Event("user-login"))
@@ -75,8 +86,15 @@ export const authService = {
       throw new Error(`Error en el registro: ${errorText || response.statusText}`)
     }
 
-    const user = await response.json()
-    const token = "registro-token"
+    const data = await response.json()
+    console.log("[authService.register] Respuesta del servidor:", data)
+    
+    // El servidor puede devolver: { data: { id, nombre, ... } } o directamente el usuario
+    const user = data.data || data.usuario || data.user || data
+    const token = data.data?.token || data.token || "registro-token"
+
+    console.log("[authService.register] Usuario extraído:", user)
+    console.log("[authService.register] Token:", token)
 
     localStorage.setItem("auth-token", token)
     localStorage.setItem("user", JSON.stringify(user))
@@ -150,6 +168,7 @@ export const AuthContext = createContext<{
   logout: () => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   isLoading: boolean
+  isAuthenticated: boolean
 } | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -157,7 +176,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    console.log("[AuthProvider] Leyendo localStorage al inicializar...")
+    console.log("[AuthProvider] - localStorage.getItem('user'):", localStorage.getItem("user"))
+    console.log("[AuthProvider] - localStorage.getItem('auth-token'):", localStorage.getItem("auth-token"))
+    
     const currentUser = authService.getCurrentUser()
+    const token = authService.getToken()
+    console.log("[AuthProvider] Inicializando auth:", {
+      user: currentUser,
+      token: token ? "TOKEN EXISTE" : "NO HAY TOKEN",
+      isAuthenticated: !!token,
+    })
     setUser(currentUser)
     setIsLoading(false)
   }, [])
@@ -205,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, forgotPassword, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, forgotPassword, isLoading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

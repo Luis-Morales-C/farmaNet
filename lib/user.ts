@@ -39,48 +39,75 @@ export interface PasswordChangeRequest {
 // User service functions
 export const userService = {
   async getProfile(): Promise<UserProfile> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      // Obtener el usuario autenticado actual desde localStorage
+      const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null
+      
+      if (!userStr) {
+        throw new Error("Usuario no autenticado")
+      }
 
-    // Mock user profile data
-    return {
-      id: "1",
-      email: "juan.perez@email.com",
-      nombre: "Juan",
-      apellido: "Pérez",
-      telefono: "+1234567890",
-      fechaNacimiento: "1990-05-15",
-      genero: "masculino",
-      rol: "CLIENTE",
-      fechaRegistro: "2024-01-15T10:30:00Z",
-      activo: true,
-      direcciones: [
-        {
-          id: "1",
-          tipo: "casa",
-          nombre: "Casa",
-          direccion: "Calle Principal 123, Colonia Centro",
-          ciudad: "Ciudad de México",
-          codigoPostal: "12345",
-          telefono: "+1234567890",
-          esPrincipal: true,
+      const currentUser = JSON.parse(userStr)
+      
+      // Llamar a la API del backend para obtener el perfil completo
+      const response = await fetch(`http://localhost:8080/api/usuarios/${currentUser.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("auth-token")}`
+        }
+      })
+
+      if (!response.ok) {
+        console.error("Error fetching profile:", response.status)
+        // Fallback: devolver un perfil básico construido desde localStorage
+        return {
+          id: currentUser.id,
+          email: currentUser.email,
+          nombre: currentUser.nombre,
+          apellido: currentUser.apellido,
+          telefono: currentUser.telefono,
+          rol: currentUser.rol === "ADMINISTRADOR" ? "ADMIN" : "CLIENTE",
+          fechaRegistro: currentUser.fechaRegistro || new Date().toISOString(),
+          activo: true,
+          direcciones: [],
+          preferencias: {
+            notificacionesEmail: true,
+            notificacionesSMS: false,
+            ofertas: true,
+            newsletter: true,
+          },
+        }
+      }
+
+      const data = await response.json()
+      console.log("[userService.getProfile] Profile data received:", data)
+      
+      // Mapear respuesta del backend al formato UserProfile
+      const profileData = data.data || data
+      
+      return {
+        id: profileData.id,
+        email: profileData.email,
+        nombre: profileData.nombre,
+        apellido: profileData.apellido,
+        telefono: profileData.telefono,
+        fechaNacimiento: profileData.fechaNacimiento,
+        genero: profileData.genero,
+        rol: profileData.rol === "ADMINISTRADOR" ? "ADMIN" : "CLIENTE",
+        fechaRegistro: profileData.fechaRegistro,
+        activo: profileData.activo ?? true,
+        direcciones: profileData.direcciones || [],
+        preferencias: {
+          notificacionesEmail: true,
+          notificacionesSMS: false,
+          ofertas: true,
+          newsletter: true,
         },
-        {
-          id: "2",
-          tipo: "trabajo",
-          nombre: "Oficina",
-          direccion: "Av. Reforma 456, Piso 10",
-          ciudad: "Ciudad de México",
-          codigoPostal: "54321",
-          esPrincipal: false,
-        },
-      ],
-      preferencias: {
-        notificacionesEmail: true,
-        notificacionesSMS: false,
-        ofertas: true,
-        newsletter: true,
-      },
+      }
+    } catch (error) {
+      console.error("[userService.getProfile] Error:", error)
+      throw new Error("No se pudo cargar el perfil del usuario")
     }
   },
 

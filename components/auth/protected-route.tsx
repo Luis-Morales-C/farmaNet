@@ -18,16 +18,28 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = "/login" }
   const router = useRouter()
 
   useEffect(() => {
+    console.log("[ProtectedRoute] Estado:", {
+      isLoading,
+      isAuthenticated,
+      user: user?.nombre,
+      requiredRole,
+      hasRole: user?.rol === requiredRole,
+    })
+
     if (!isLoading) {
       if (!isAuthenticated) {
+        console.log("[ProtectedRoute] NO AUTENTICADO - Redirigiendo a:", redirectTo)
         router.push(redirectTo)
         return
       }
 
       if (requiredRole && user?.rol !== requiredRole) {
+        console.log("[ProtectedRoute] ROL INCORRECTO - Redirigiendo a: /unauthorized")
         router.push("/unauthorized")
         return
       }
+
+      console.log("[ProtectedRoute] Acceso permitido")
     }
   }, [isLoading, isAuthenticated, user, requiredRole, router, redirectTo])
 

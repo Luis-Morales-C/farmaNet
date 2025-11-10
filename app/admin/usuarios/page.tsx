@@ -2,46 +2,66 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth"
-import { adminApi, type AdminUser } from "@/lib/admin"
+import { usuariosService, type UsuarioDetalleDTO } from "@/lib/usuarios"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, MoreHorizontal, Edit, Ban, CheckCircle, AlertTriangle, UserPlus } from "lucide-react"
+import { AlertTriangle, Search } from "lucide-react"
 import Link from "next/link"
+import { UserList } from "@/components/admin/user-list"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AdminUsers() {
   const { user } = useAuth()
-  const [users, setUsers] = useState<AdminUser[]>([])
+  const { toast } = useToast()
+  const [usuarios, setUsuarios] = useState<UsuarioDetalleDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const data = await adminApi.getUsers()
-        setUsers(data)
-      } catch (error) {
-        console.error("Error loading users:", error)
-      } finally {
-        setLoading(false)
-      }
+  const cargarUsuarios = async () => {
+    try {
+      setLoading(true)
+      const response = await usuariosService.listarUsuarios()
+      setUsuarios(response.usuarios)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo cargar los usuarios",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
+  }
 
-    if (user?.role === "admin") {
-      loadUsers()
+  useEffect(() => {
+    if (user?.rol === "ADMIN") {
+      cargarUsuarios()
     }
   }, [user])
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const handleBuscar = async () => {
+    if (!searchTerm.trim()) {
+      cargarUsuarios()
+      return
+    }
 
-  if (!user || user.role !== "admin") {
+    try {
+      setLoading(true)
+      const response = await usuariosService.buscarUsuarios(searchTerm)
+      setUsuarios(response.usuarios)
+    } catch (error) {
+      toast({
+        title: "Error en la búsqueda",
+        description: error instanceof Error ? error.message : "No se pudo realizar la búsqueda",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!user || user.rol !== "ADMIN") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -60,17 +80,18 @@ export default function AdminUsers() {
     )
   }
 
+  const usuariosFiltrados = usuarios.filter(
+    (u) =>
+      u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h1>
-          <p className="text-gray-600">Administra las cuentas de usuario del sistema</p>
-        </div>
-        <Button className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          Agregar Usuario
-        </Button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h1>
+        <p className="text-gray-600">Administra las cuentas de usuario y consulta su historial de compras</p>
       </div>
 
       {/* Search */}
@@ -80,16 +101,15 @@ export default function AdminUsers() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Buscar usuarios..."
+                placeholder="Buscar por nombre, apellido o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleBuscar()}
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline">Filtros</Button>
-              <Button variant="outline">Exportar</Button>
-            </div>
+            <Button onClick={handleBuscar}>Buscar</Button>
+            <Button variant="outline" onClick={() => { setSearchTerm(""); cargarUsuarios() }}>Limpiar</Button>
           </div>
         </CardContent>
       </Card>
@@ -97,78 +117,10 @@ export default function AdminUsers() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Usuarios ({filteredUsers.length})</CardTitle>
+          <CardTitle>Usuarios ({usuariosFiltrados.length} de {usuarios.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-              <p>Cargando usuarios...</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuario</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fecha de Registro</TableHead>
-                  <TableHead>Último Acceso</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{u.name}</div>
-                        <div className="text-sm text-muted-foreground">{u.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={u.role === "admin" ? "default" : "secondary"}>
-                        {u.role === "admin" ? "Administrador" : "Usuario"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={u.status === "active" ? "default" : "destructive"}>
-                        {u.status === "active" ? "Activo" : "Inactivo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>{u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : "Nunca"}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          {u.status === "active" ? (
-                            <DropdownMenuItem className="text-red-600">
-                              <Ban className="mr-2 h-4 w-4" />
-                              Desactivar
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem className="text-green-600">
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Activar
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <UserList usuarios={usuariosFiltrados} onRefresh={cargarUsuarios} isLoading={loading} />
         </CardContent>
       </Card>
     </div>
