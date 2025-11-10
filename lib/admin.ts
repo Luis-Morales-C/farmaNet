@@ -136,12 +136,12 @@ export const adminApi = {
 
       //Transformar la respuesta al formato esperado
       const stats: AdminStats = {
-        totalProducts: response.totalProducts || 0,
-        totalUsers: response.totalUsers || 0,
-        totalOrders: response.totalOrders || 0,
-        totalRevenue: response.totalRevenue || 0,
-        lowStockProducts: response.lowStockProducts || 0,
-        pendingOrders: response.pendingOrders || 0,
+        totalProducts: response.data?.totalProductos || response.data?.productosActivos || 0,
+        totalUsers: response.data?.totalUsuarios || response.data?.usuariosActivos || 0,
+        totalOrders: response.data?.totalPedidos || 0,
+        totalRevenue: response.data?.ingresoTotal || 0,
+        lowStockProducts: response.data?.productosBajoStock || 0,
+        pendingOrders: response.data?.pedidosPendientes || 0,
       }
 
       console.log("Estadísticas obtenidas exitosamente")

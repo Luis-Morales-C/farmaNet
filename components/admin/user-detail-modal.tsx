@@ -16,6 +16,7 @@ import { Eye, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { UsuarioDetalleDTO } from "@/lib/usuarios"
 import { UserEditForm } from "./user-edit-form"
+import { UserOrders } from "./user-orders"
 
 interface UserDetailModalProps {
   usuario: UsuarioDetalleDTO
@@ -189,6 +190,8 @@ export function UserDetailModal({ usuario, onUpdate }: UserDetailModalProps) {
                 </div>
               </CardContent>
             </Card>
+
+            <UserOrders userId={usuario.id} />
 
             {usuario.prescripciones && usuario.prescripciones.length > 0 && (
               <Card>
