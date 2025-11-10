@@ -1,0 +1,58 @@
+{
+    "checksum": "ad2ca13b84dcc417895d50591be03ec3d6020101f146fa9a6d5f509e95424bcc",
+    "data": {
+    "id": "3228df3e-9a7d-464d-80d6-a63ffb9e7b1b",
+    "createdAt": 1762531451974,
+    "updatedAt": 1762531451982,
+    "title": "EL boton cerrar sesion no funciona, arreglalo, ...",
+    "messages": [
+        {
+            "id": "10eee97e-181d-46c2-94a8-b7cf01d3097c",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "EL boton cerrar sesion no funciona, arreglalo, necesitas codigo del back?"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "app/notificaciones/page.tsx",
+                    "fsPath": "C:/Users/ANGEL/Downloads/farmacia-frontend/app/notificaciones/page.tsx",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "\"use client\"\n\nimport { useState, useEffect } from \"react\"\nimport Link from \"next/link\"\nimport { useRouter } from \"next/navigation\"\nimport { Bell, ArrowLeft, Check, X, Package, ShoppingCart, AlertTriangle, Info } from \"lucide-react\"\nimport { Button } from \"@/components/ui/button\"\nimport { Card, CardContent } from \"@/components/ui/card\"\nimport { Badge } from \"@/components/ui/badge\"\nimport { useToast } from \"@/hooks/use-toast\"\nimport { Header } from \"@/components/layout/header\"\nimport { Footer } from \"@/components/layout/footer\"\n\n// Mock data para notificaciones\nconst mockNotificaciones = [\n  {\n    id: \"1\",\n    tipo: \"pedido\",\n    titulo: \"Pedido confirmado\",\n    mensaje: \"Tu pedido #12345 ha sido confirmado y está siendo preparado\",\n    fecha: new Date(Date.now() - 1000 * 60 * 30), // 30 minutos atrás\n    leida: false,\n    icono: ShoppingCart,\n    color: \"text-green-600\",\n  },\n  {\n    id: \"2\",\n    tipo: \"stock\",\n    titulo: \"Producto disponible\",\n    mensaje: \"El Paracetamol 500mg que tenías en favoritos ya está disponible\",\n    fecha: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 horas atrás\n    leida: false,\n    icono: Package,\n    color: \"text-blue-600\",\n  },\n  {\n    id: \"3\",\n    tipo: \"promocion\",\n    titulo: \"Nueva oferta disponible\",\n    mensaje: \"25% de descuento en vitaminas y suplementos hasta el domingo\",\n    fecha: new Date(Date.now() - 1000 * 60 * 60 * 6), // 6 horas atrás\n    leida: true,\n    icono: Info,\n    color: \"text-purple-600\",\n  },\n  {\n    id: \"4\",\n    tipo: \"alerta\",\n    titulo: \"Recordatorio de medicamento\",\n    mensaje: \"Es hora de tomar tu medicamento prescrito\",\n    fecha: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 día atrás\n    leida: true,\n    icono: AlertTriangle,\n    color: \"text-orange-600\",\n  },\n]\n\ninterface Notification {\n  id: string\n  tipo: string\n  titulo: string\n  mensaje: string\n  fecha: Date\n  leida: boolean\n  icono: any\n  color: string\n}\n\nexport default function NotificacionesPage() {\n  const [notificaciones, setNotificaciones] = useState<Notification[]>(mockNotificaciones)\n  const { toast } = useToast()\n\n  const handleMarkAsRead = (id: string) => {\n    setNotificaciones((prev) => prev.map((notif) => (notif.id === id ? { ...notif, leida: true } : notif)))\n  }\n\n  const handleMarkAllAsRead = () => {\n    setNotificaciones((prev) => prev.map((notif) => ({ ...notif, leida: true })))\n    toast({\n      title: \"Notificaciones marcadas\",\n      description: \"Todas las notificaciones se marcaron como leídas\",\n    })\n  }\n\n  const handleDeleteNotification = (id: string) => {\n    setNotificaciones((prev) => prev.filter((notif) => notif.id !== id))\n    toast({\n      title: \"Notificación eliminada\",\n      description: \"La notificación se eliminó correctamente\",\n    })\n  }\n\n  const formatTimeAgo = (fecha: Date) => {\n    const now = new Date()\n    const diff = now.getTime() - fecha.getTime()\n    const minutes = Math.floor(diff / (1000 * 60))\n    const hours = Math.floor(diff / (1000 * 60 * 60))\n    const days = Math.floor(diff / (1000 * 60 * 60 * 24))\n\n    if (minutes < 60) {\n      return `hace ${minutes} minutos`\n    } else if (hours < 24) {\n      return `hace ${hours} horas`\n    } else {\n      return `hace ${days} días`\n    }\n  }\n\n  const unreadCount = notificaciones.filter((n) => !n.leida).length\n\n  return (\n    <ProtectedRoute>\n      <div className=\"min-h-screen flex flex-col\">\n        <Header />\n\n        <main className=\"flex-1\">\n          <div className=\"container mx-auto px-4 py-8\">\n            {/* Header */}\n            <div className=\"flex items-center gap-4 mb-8\">\n              <Button variant=\"ghost\" size=\"icon\" asChild>\n                <Link href=\"/\">\n                  <ArrowLeft className=\"h-5 w-5\" />\n                </Link>\n              </Button>\n              <div className=\"flex-1\">\n                <h1 className=\"text-3xl font-bold font-space-grotesk flex items-center gap-2\">\n                  <Bell className=\"h-8 w-8 text-primary\" />\n                  Notificaciones\n                </h1>\n                <p className=\"text-muted-foreground\">\n                  {unreadCount > 0 ? `${unreadCount} notificaciones sin leer` : \"Todas las notificaciones están al día\"}\n                </p>\n              </div>\n              {unreadCount > 0 && (\n                <Button onClick={handleMarkAllAsRead} variant=\"outline\">\n                  <Check className=\"h-4 w-4 mr-2\" />\n                  Marcar todas como leídas\n                </Button>\n              )}\n            </div>\n\n            {notificaciones.length === 0 ? (\n              <div className=\"text-center max-w-md mx-auto py-16\">\n                <div className=\"mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6\">\n                  <Bell className=\"h-12 w-12 text-muted-foreground\" />\n                </div>\n\n                <h2 className=\"text-2xl font-bold mb-2 font-space-grotesk\">No tienes notificaciones</h2>\n                <p className=\"text-muted-foreground mb-8\">\n                  Te notificaremos sobre el estado de tus pedidos, ofertas especiales y más\n                </p>\n\n                <Button size=\"lg\" asChild>\n                  <Link href=\"/catalogo\">Explorar Productos</Link>\n                </Button>\n              </div>\n            ) : (\n              <div className=\"space-y-4\">\n                {notificaciones.map((notificacion) => {\n                  const IconComponent = notificacion.icono\n                  return (\n                    <Card\n                      key={notificacion.id}\n                      className={`transition-all duration-200 ${\n                        !notificacion.leida ? \"border-primary/50 bg-primary/5\" : \"\"\n                      }`}\n                    >\n                      <CardContent className=\"p-4\">\n                        <div className=\"flex items-start gap-4\">\n                          <div className={`flex-shrink-0 ${notificacion.color}`}>\n                            <IconComponent className=\"h-6 w-6\" />\n                          </div>\n\n                          <div className=\"flex-1 min-w-0\">\n                            <div className=\"flex items-start justify-between gap-2 mb-1\">\n                              <h3 className=\"font-semibold text-sm\">{notificacion.titulo}</h3>\n                              <div className=\"flex items-center gap-2\">\n                                {!notificacion.leida && (\n                                  <Badge variant=\"default\" className=\"text-xs\">\n                                    Nueva\n                                  </Badge>\n                                )}\n                                <span className=\"text-xs text-muted-foreground whitespace-nowrap\">\n                                  {formatTimeAgo(notificacion.fecha)}\n                                </span>\n                              </div>\n                            </div>\n\n                            <p className=\"text-sm text-muted-foreground mb-3\">{notificacion.mensaje}</p>\n\n                            <div className=\"flex items-center gap-2\">\n                              {!notificacion.leida && (\n                                <Button variant=\"ghost\" size=\"sm\" onClick={() => handleMarkAsRead(notificacion.id)}>\n                                  <Check className=\"h-4 w-4 mr-1\" />\n                                  Marcar como leída\n                                </Button>\n                              )}\n                              <Button\n                                variant=\"ghost\"\n                                size=\"sm\"\n                                onClick={() => handleDeleteNotification(notificacion.id)}\n                              >\n                                <X className=\"h-4 w-4 mr-1\" />\n                                Eliminar\n                              </Button>\n                            </div>\n                          </div>\n                        </div>\n                      </CardContent>\n                    </Card>\n                  )\n                })}\n              </div>\n            )}\n          </div>\n        </main>\n\n        <Footer />\n      </div>\n    </ProtectedRoute>\n  )\n}\n",
+                    "language": "typescript jsx"
+                }
+            },
+            "createdAt": 1762531451982,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "EL boton cerrar sesion no funciona, arreglalo, necesitas codigo del back?"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        }
+    ],
+    "isAgent": true,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isWebDevAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "model": "default"
+}
+}

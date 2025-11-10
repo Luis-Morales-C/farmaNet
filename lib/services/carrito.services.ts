@@ -1,5 +1,6 @@
 // lib/services/carrito.service.ts
 import { CartItem } from "@/lib/cart"
+import { api } from '../api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
 
@@ -57,7 +58,7 @@ class CarritoService {
   ): Promise<ApiResponse<T>> {
     try {
       const token = localStorage.getItem('auth-token')
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await api.fetch(endpoint.startsWith('http') ? endpoint : `${endpoint}`, {
         ...options,
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +82,7 @@ class CarritoService {
 
   async obtenerCarrito(usuarioId: string): Promise<Carrito> {
     const response = await this.request<Carrito>(
-      `/api/carrito/obtener/${usuarioId}`
+      api.cart.get // usar endpoint central
     )
     console.log("Carrito obtenido del backend:", response.data)
     return response.data!
@@ -92,7 +93,7 @@ class CarritoService {
     dto: AgregarItemDTO
   ): Promise<Carrito> {
     const response = await this.request<Carrito>(
-      `/api/carrito/agregar-producto/${usuarioId}`,
+      api.cart.add,
       {
         method: "POST",
         body: JSON.stringify(dto),
@@ -106,9 +107,9 @@ class CarritoService {
     dto: ActualizarCantidadDTO
   ): Promise<Carrito> {
     const response = await this.request<Carrito>(
-      `/api/carrito/actualizar-cantidad/${usuarioId}`,
+      api.cart.update,
       {
-        method: "PUT",
+        method: "POST",
         body: JSON.stringify(dto),
       }
     )
@@ -120,9 +121,9 @@ class CarritoService {
     dto: EliminarItemDTO
   ): Promise<Carrito> {
     const response = await this.request<Carrito>(
-      `/api/carrito/eliminar-producto/${usuarioId}`,
+      api.cart.remove,
       {
-        method: "DELETE",
+        method: "POST",
         body: JSON.stringify(dto),
       }
     )
@@ -130,13 +131,13 @@ class CarritoService {
   }
 
   async limpiarCarrito(usuarioId: string): Promise<void> {
-    await this.request<void>(`/api/carrito/limpiar-carrito/${usuarioId}`, {
+    await this.request<void>(`${api.cart.get}/limpiar/${usuarioId}`, {
       method: "DELETE",
     })
   }
 
   async eliminarCarrito(usuarioId: string): Promise<void> {
-    await this.request<void>(`/api/carrito/eliminar-carrito/${usuarioId}`, {
+    await this.request<void>(`${api.cart.get}/eliminar/${usuarioId}`, {
       method: "DELETE",
     })
   }

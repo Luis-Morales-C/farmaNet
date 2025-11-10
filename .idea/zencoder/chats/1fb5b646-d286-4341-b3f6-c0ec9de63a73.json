@@ -1,0 +1,201 @@
+{
+    "checksum": "5575e146585e54389205863211ca1159cb2373dce0ce4e5c3ff2cb859a4c689a",
+    "data": {
+    "id": "1fb5b646-d286-4341-b3f6-c0ec9de63a73",
+    "createdAt": 1762729982870,
+    "updatedAt": 1762729987746,
+    "title": "API Requests and Screen Listing",
+    "messages": [
+        {
+            "id": "2949de03-81c9-4f3e-9124-157d6e59ceae",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Genera un archivo .md para saber donde y como se hacen las peticiones (fetch/axios) y tambien quiero que listes todas las pantallas que hay"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "lib/api.ts",
+                    "fsPath": "C:/Users/ANGEL/Downloads/farmacia-frontend/lib/api.ts",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "// API utility functions\nconst API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';\n\nexport const api = {\n  // Generic fetch function with credentials\n  fetch: async (url: string, options: RequestInit = {}) => {\n    return await fetch(url, {\n      credentials: 'include',\n      ...options,\n    });\n  },\n  \n  // Auth endpoints\n  auth: {\n    register: `${API_BASE_URL}/api/usuarios/registro`,\n    login: `${API_BASE_URL}/api/usuarios/login`,\n    logout: `${API_BASE_URL}/api/usuarios/logout`,\n    checkEmail: (email: string) => `${API_BASE_URL}/api/usuarios/existe/${email}`,\n  },\n  \n  // User endpoints\n  user: {\n    get: (id: string) => `${API_BASE_URL}/api/usuarios/${id}`,\n    update: (id: string) => `${API_BASE_URL}/api/usuarios/${id}`,\n  },\n  \n  // Catalog endpoints\n  catalog: {\n    getAll: `${API_BASE_URL}/api/catalogo`,\n    search: (term: string) => `${API_BASE_URL}/api/catalogo/buscar?nombre=${term}`,\n    offers: `${API_BASE_URL}/api/catalogo/ofertas`,\n    byCategory: (categoryId: string) => `${API_BASE_URL}/api/catalogo/categoria/${categoryId}`,\n  },\n  \n  // Cart endpoints\n  cart: {\n    get: (userId: string) => `${API_BASE_URL}/api/carrito/obtener/${userId}`,\n    add: (userId: string) => `${API_BASE_URL}/api/carrito/agregar-producto/${userId}`,\n    update: (userId: string) => `${API_BASE_URL}/api/carrito/actualizar-cantidad/${userId}`,\n    remove: (userId: string) => `${API_BASE_URL}/api/carrito/eliminar-producto/${userId}`,\n    clear: (userId: string) => `${API_BASE_URL}/api/carrito/limpiar-carrito/${userId}`,\n  },\n  \n  // Categories endpoints\n  categories: {\n    getAll: `${API_BASE_URL}/api/categorias`,\n    get: (id: string) => `${API_BASE_URL}/api/categorias/${id}`,\n    create: `${API_BASE_URL}/api/categorias`,\n    update: (id: string) => `${API_BASE_URL}/api/categorias/${id}`,\n    delete: (id: string) => `${API_BASE_URL}/api/categorias/${id}`,\n  },\n  \n  // Favorites endpoints\n  favorites: {\n    getAll: `${API_BASE_URL}/api/favoritos`,\n    check: (productId: string) => `${API_BASE_URL}/api/favoritos/verificar/${productId}`,\n    add: (productId: string) => `${API_BASE_URL}/api/favoritos/${productId}`,\n    remove: (productId: string) => `${API_BASE_URL}/api/favoritos/${productId}`,\n  },\n  \n  // Orders endpoints\n  orders: {\n    create: `${API_BASE_URL}/api/pedidos/crear`,\n    getUserOrders: (userId: string) => `${API_BASE_URL}/api/pedidos/usuario/${userId}`,\n    get: (orderId: string) => `${API_BASE_URL}/api/pedidos/${orderId}`,\n  }\n};",
+                    "language": "typescript"
+                }
+            },
+            "createdAt": 1762729982918,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Genera un archivo .md para saber donde y como se hacen las peticiones (fetch/axios) y tambien quiero que listes todas las pantallas que hay "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "278d337e-e2b6-455a-b665-043ca94c1028",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "thought",
+                    "text": "The user asked: \"Genera un archivo .md para saber donde y como se hacen las peticiones (fetch/axios) y tambien quiero que listes todas las pantallas que hay\"\n\n\n## Translating user request  \n- The user asked a question in Spanish, which translates to: \"Generate a ."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_82486693",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": ".",
+                                "fsPath": "C:/Users/ANGEL/Downloads/farmacia-frontend"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "thought",
+                    "text": "The project structure shows an app directory with various routes like chat, admin, login, buscar, cuenta, perfil, carrito, ofertas, pedidos, catalogo, checkout, registro, favoritos, productos, calendario, categorias, notificaciones, forgot-password, historial-ordenes.\n\n\n## Examining Project Structure  \n- The app directory includes various routes for user interaction and management."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_68876112",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "thought",
+                    "text": "There are many uses of fetch. Also, search for \"api.\" to see where the api object from api.ts is used.\n"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_30091092",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "thought",
+                    "text": "The regex \"api\\.\" might not be working. Let me try searching for \"api.\" without regex.\n"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_22961374",
+                    "title": "Fulltext search",
+                    "statusText": "Failed",
+                    "status": "ERROR",
+                    "isHidden": false
+                },
+                {
+                    "type": "thought",
+                    "text": "Regex search must be case-sensitive. So set caseSensitive=true."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_73832297",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "thought",
+                    "text": "There are usages in lib/auth.tsx, app/categorias/page.tsx, and some unrelated in carousel.tsx.\n"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_40070018",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "thought",
+                    "text": "No axios found, so only fetch is used.\n\n\n## Identifying App Screens  \n- Found app directory contains routes corresponding to screens.  \n- Screens identified include home (/), chat (/chat), admin (/admin), and login (/login).\n\n## Extending Screen List  \n- Additional screens found include buscar (/buscar), cuenta (/cuenta), and perfil (/perfil).  \n- Other routes identified are carrito (/carrito), ofertas (/ofertas), and pedidos (/pedidos).  \n\n## Cataloging More Routes  \n- Further screens include catalogo (/catalogo), checkout (/checkout), and registro (/registro).  \n- Additional routes are favoritos (/favoritos), productos (/productos), and calendario (/calendario).  \n\n## Documenting App Structure  \n- Noted sub-pages exist, like app/admin/productos/nuevo, suggesting nested routes.  \n- User requested a ."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "call_21186570",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "API_DOCUMENTATION.md",
+                                "fsPath": "C:/Users/ANGEL/Downloads/farmacia-frontend/API_DOCUMENTATION.md"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/ANGEL/Downloads/farmacia-frontend/API_DOCUMENTATION.md\n+++ C:/Users/ANGEL/Downloads/farmacia-frontend/API_DOCUMENTATION.md\n@@ -0,0 +1,128 @@\n+# Documentación de Peticiones API y Pantallas\n+\n+Este documento describe las pantallas disponibles en la aplicación y dónde y cómo se realizan las peticiones HTTP (usando fetch).\n+\n+## Pantallas Disponibles\n+\n+La aplicación utiliza Next.js con el App Router. Las siguientes son las rutas principales (pantallas):\n+\n+- **Inicio** (`/`) - Página principal (app/page.tsx)\n+- **Chat** (`/chat`) - Interfaz de chat (app/chat/)\n+- **Administrador** (`/admin`) - Panel de administración (app/admin/)\n+  - Sub-página: Nuevo producto (`/admin/productos/nuevo`)\n+- **Login** (`/login`) - Inicio de sesión (app/login/)\n+- **Buscar** (`/buscar`) - Página de búsqueda (app/buscar/)\n+- **Cuenta** (`/cuenta`) - Gestión de cuenta (app/cuenta/)\n+- **Perfil** (`/perfil`) - Perfil de usuario (app/perfil/)\n+- **Carrito** (`/carrito`) - Carrito de compras (app/carrito/)\n+- **Ofertas** (`/ofertas`) - Productos en oferta (app/ofertas/)\n+- **Pedidos** (`/pedidos`) - Gestión de pedidos (app/pedidos/)\n+- **Catálogo** (`/catalogo`) - Catálogo de productos (app/catalogo/)\n+- **Checkout** (`/checkout`) - Proceso de pago (app/checkout/)\n+- **Registro** (`/registro`) - Registro de usuarios (app/registro/)\n+- **Favoritos** (`/favoritos`) - Productos favoritos (app/favoritos/)\n+- **Productos** (`/productos`) - Lista de productos (app/productos/)\n+  - Sub-página: Detalle de producto (`/productos/[id]`)\n+- **Calendario** (`/calendario`) - Calendario (app/calendario/)\n+- **Categorías** (`/categorias`) - Categorías de productos (app/categorias/)\n+- **Notificaciones** (`/notificaciones`) - Notificaciones (app/notificaciones/)\n+- **Recuperar Contraseña** (`/forgot-password`) - Recuperación de contraseña (app/forgot-password/)\n+- **Historial de Órdenes** (`/historial-ordenes`) - Historial de pedidos (app/historial-ordenes/)\n+\n+## Peticiones API\n+\n+### Método de Realización\n+\n+Todas las peticiones HTTP se realizan utilizando la función nativa `fetch` de JavaScript. No se utiliza axios u otras librerías.\n+\n+### Configuración General\n+\n+- **Base URL**: Definida en `process.env.NEXT_PUBLIC_API_URL` o por defecto `http://localhost:8080`\n+- **Credenciales**: Todas las peticiones incluyen `credentials: 'include'` para enviar cookies de sesión\n+- **Headers**: Se añaden headers como `Content-Type: application/json` cuando es necesario\n+\n+### Función Genérica\n+\n+En `lib/api.ts` se define una función genérica `api.fetch` que envuelve `fetch` y añade automáticamente las credenciales:\n+\n+```typescript\n+fetch: async (url: string, options: RequestInit = {}) => {\n+  return await fetch(url, {\n+    credentials: 'include',\n+    ...options,\n+  });\n+}\n+```\n+\n+### Endpoints Definidos\n+\n+Los endpoints están organizados en `lib/api.ts` bajo el objeto `api`:\n+\n+- **Auth**: registro, login, logout, verificar email\n+- **User**: obtener, actualizar usuario\n+- **Catalog**: obtener catálogo, buscar, ofertas, por categoría\n+- **Cart**: obtener, agregar, actualizar, eliminar productos, limpiar carrito\n+- **Categories**: CRUD de categorías\n+- **Favorites**: obtener, verificar, agregar, eliminar favoritos\n+- **Orders**: crear, obtener pedidos por usuario, obtener pedido específico\n+\n+### Ubicaciones de Peticiones\n+\n+Las peticiones se realizan en los siguientes archivos y contextos:\n+\n+#### Páginas (app/)\n+- `app/registro/page.tsx`: Registro de usuario (`POST /api/usuarios/registro`)\n+- `app/catalogo/page.tsx`:\n+  - Obtener catálogo (`GET /api/catalogo`)\n+  - Verificar favoritos (`GET /api/favoritos/verificar/{id}`)\n+  - Agregar a favoritos (`POST /api/favoritos/{id}`)\n+  - Remover de favoritos (`DELETE /api/favoritos/{id}`)\n+  - Agregar al carrito (`POST /api/carrito/agregar-producto/{userId}`)\n+- `app/categorias/page.tsx`: Obtener categorías (`GET /api/categorias/obtener`) usando `api.fetch`\n+- `app/carrito/page.tsx`:\n+  - Obtener carrito (`GET /api/carrito/obtener/{userId}`)\n+  - Actualizar cantidad (`PUT /api/carrito/actualizar-cantidad/{userId}`)\n+  - Eliminar producto (`DELETE /api/carrito/eliminar-producto/{userId}`)\n+- `app/login/page.tsx`: Login (`POST /api/usuarios/login`)\n+- `app/ofertas/page.tsx`: Obtener ofertas (función `fetchOffers`)\n+- `app/productos/[id]/page.tsx`: Obtener producto específico (función `fetchProduct`)\n+- `app/admin/productos/nuevo/page.tsx`: Subir imagen (`POST /api/imagenes/subir`)\n+\n+#### Librerías (lib/)\n+- `lib/auth.tsx`:\n+  - Login (`POST api.auth.login`)\n+  - Registro (`POST api.auth.register`)\n+  - Logout (`POST api.auth.logout`)\n+  - Verificar email (`GET api.auth.checkEmail`)\n+- `lib/catalogo.service.ts`: Servicios para catálogo usando fetch genérico\n+- `lib/carrito.ts`: Servicios para carrito usando fetch genérico\n+- `lib/comments.ts`: Comentarios de productos (`GET /product/{id}`, `POST`, etc.)\n+- `lib/user.ts`:\n+  - Obtener perfil (`GET /api/usuarios/perfil`)\n+  - Cambiar contraseña (`POST /api/usuarios/cambiar-password`)\n+  - Obtener cuenta (`GET /api/usuarios/cuenta`)\n+- `lib/categoria.ts`: Gestión de categorías con método `fetchAPI`\n+- `lib/products.ts`: Servicios de productos\n+- `lib/orders.service.ts`: Servicios de órdenes\n+- `lib/admin.ts`: Funciones administrativas\n+- `lib/services/carrito.services.ts`: Servicios adicionales de carrito\n+\n+#### Hooks\n+- `hooks/use-notifications.ts`: Obtener notificaciones (`GET /api/notificaciones`) cada 30 segundos\n+\n+### Patrones de Uso\n+\n+1. **Directo con fetch**: La mayoría de las peticiones usan `fetch` directamente con URLs hardcodeadas o construidas\n+2. **Usando api.fetch**: Algunos usan la función genérica de `lib/api.ts`\n+3. **Servicios especializados**: Librerías como `categoria.ts` tienen métodos internos que usan fetch\n+4. **Hooks para polling**: `use-notifications.ts` usa intervalos para actualizar datos automáticamente\n+\n+### Manejo de Errores\n+\n+- Las respuestas se verifican con `response.ok`\n+- En caso de error, se lanzan excepciones o se muestran mensajes en consola\n+- Algunos lugares usan try/catch para manejar errores específicos\n+\n+### Autenticación\n+\n+Todas las peticiones incluyen cookies de sesión mediante `credentials: 'include'`, asumiendo que el backend maneja la autenticación basada en sesiones.",
+                    "refToolCallId": "call_21186570"
+                },
+                {
+                    "type": "thought",
+                    "text": "The file has been created. I think that's the response. The user asked to generate the .md file, and I did it."
+                },
+                {
+                    "type": "text",
+                    "text": "Archivo `.md` generado exitosamente en `C:/Users/ANGEL/Downloads/farmacia-frontend/API_DOCUMENTATION.md` con la documentación solicitada sobre las peticiones API y las pantallas de la aplicación. El documento incluye:\n\n- Lista completa de todas las pantallas/rutas disponibles\n- Descripción detallada de cómo y dónde se realizan las peticiones fetch\n- Ubicaciones específicas en el código donde ocurren las llamadas\n- Información sobre la configuración de API y patrones de uso\n\nLa documentación está estructurada para ser fácil de navegar y entender. Si necesitas modificar algo o agregar más detalles, avísame."
+                },
+                {
+                    "type": "codePatch",
+                    "diffs": [
+                        {
+                            "path": "API_DOCUMENTATION.md",
+                            "fsPath": "C:/Users/ANGEL/Downloads/farmacia-frontend/API_DOCUMENTATION.md",
+                            "patch": "@@ -0,0 +1,6137 @@\n+# Documentaci%C3%B3n de Peticiones API y Pantallas%0D%0A%0D%0AEste documento describe las pantallas disponibles en la aplicaci%C3%B3n y d%C3%B3nde y c%C3%B3mo se realizan las peticiones HTTP (usando fetch).%0D%0A%0D%0A## Pantallas Disponibles%0D%0A%0D%0ALa aplicaci%C3%B3n utiliza Next.js con el App Router. Las siguientes son las rutas principales (pantallas):%0D%0A%0D%0A- **Inicio** (%60/%60) - P%C3%A1gina principal (app/page.tsx)%0D%0A- **Chat** (%60/chat%60) - Interfaz de chat (app/chat/)%0D%0A- **Administrador** (%60/admin%60) - Panel de administraci%C3%B3n (app/admin/)%0D%0A  - Sub-p%C3%A1gina: Nuevo producto (%60/admin/productos/nuevo%60)%0D%0A- **Login** (%60/login%60) - Inicio de sesi%C3%B3n (app/login/)%0D%0A- **Buscar** (%60/buscar%60) - P%C3%A1gina de b%C3%BAsqueda (app/buscar/)%0D%0A- **Cuenta** (%60/cuenta%60) - Gesti%C3%B3n de cuenta (app/cuenta/)%0D%0A- **Perfil** (%60/perfil%60) - Perfil de usuario (app/perfil/)%0D%0A- **Carrito** (%60/carrito%60) - Carrito de compras (app/carrito/)%0D%0A- **Ofertas** (%60/ofertas%60) - Productos en oferta (app/ofertas/)%0D%0A- **Pedidos** (%60/pedidos%60) - Gesti%C3%B3n de pedidos (app/pedidos/)%0D%0A- **Cat%C3%A1logo** (%60/catalogo%60) - Cat%C3%A1logo de productos (app/catalogo/)%0D%0A- **Checkout** (%60/checkout%60) - Proceso de pago (app/checkout/)%0D%0A- **Registro** (%60/registro%60) - Registro de usuarios (app/registro/)%0D%0A- **Favoritos** (%60/favoritos%60) - Productos favoritos (app/favoritos/)%0D%0A- **Productos** (%60/productos%60) - Lista de productos (app/productos/)%0D%0A  - Sub-p%C3%A1gina: Detalle de producto (%60/productos/%5Bid%5D%60)%0D%0A- **Calendario** (%60/calendario%60) - Calendario (app/calendario/)%0D%0A- **Categor%C3%ADas** (%60/categorias%60) - Categor%C3%ADas de productos (app/categorias/)%0D%0A- **Notificaciones** (%60/notificaciones%60) - Notificaciones (app/notificaciones/)%0D%0A- **Recuperar Contrase%C3%B1a** (%60/forgot-password%60) - Recuperaci%C3%B3n de contrase%C3%B1a (app/forgot-password/)%0D%0A- **Historial de %C3%93rdenes** (%60/historial-ordenes%60) - Historial de pedidos (app/historial-ordenes/)%0D%0A%0D%0A## Peticiones API%0D%0A%0D%0A### M%C3%A9todo de Realizaci%C3%B3n%0D%0A%0D%0ATodas las peticiones HTTP se realizan utilizando la funci%C3%B3n nativa %60fetch%60 de JavaScript. No se utiliza axios u otras librer%C3%ADas.%0D%0A%0D%0A### Configuraci%C3%B3n General%0D%0A%0D%0A- **Base URL**: Definida en %60process.env.NEXT_PUBLIC_API_URL%60 o por defecto %60http://localhost:8080%60%0D%0A- **Credenciales**: Todas las peticiones incluyen %60credentials: 'include'%60 para enviar cookies de sesi%C3%B3n%0D%0A- **Headers**: Se a%C3%B1aden headers como %60Content-Type: application/json%60 cuando es necesario%0D%0A%0D%0A### Funci%C3%B3n Gen%C3%A9rica%0D%0A%0D%0AEn %60lib/api.ts%60 se define una funci%C3%B3n gen%C3%A9rica %60api.fetch%60 que envuelve %60fetch%60 y a%C3%B1ade autom%C3%A1ticamente las credenciales:%0D%0A%0D%0A%60%60%60typescript%0D%0Afetch: async (url: string, options: RequestInit = %7B%7D) =%3E %7B%0D%0A  return await fetch(url, %7B%0D%0A    credentials: 'include',%0D%0A    ...options,%0D%0A  %7D);%0D%0A%7D%0D%0A%60%60%60%0D%0A%0D%0A### Endpoints Definidos%0D%0A%0D%0ALos endpoints est%C3%A1n organizados en %60lib/api.ts%60 bajo el objeto %60api%60:%0D%0A%0D%0A- **Auth**: registro, login, logout, verificar email%0D%0A- **User**: obtener, actualizar usuario%0D%0A- **Catalog**: obtener cat%C3%A1logo, buscar, ofertas, por categor%C3%ADa%0D%0A- **Cart**: obtener, agregar, actualizar, eliminar productos, limpiar carrito%0D%0A- **Categories**: CRUD de categor%C3%ADas%0D%0A- **Favorites**: obtener, verificar, agregar, eliminar favoritos%0D%0A- **Orders**: crear, obtener pedidos por usuario, obtener pedido espec%C3%ADfico%0D%0A%0D%0A### Ubicaciones de Peticiones%0D%0A%0D%0ALas peticiones se realizan en los siguientes archivos y contextos:%0D%0A%0D%0A#### P%C3%A1ginas (app/)%0D%0A- %60app/registro/page.tsx%60: Registro de usuario (%60POST /api/usuarios/registro%60)%0D%0A- %60app/catalogo/page.tsx%60:%0D%0A  - Obtener cat%C3%A1logo (%60GET /api/catalogo%60)%0D%0A  - Verificar favoritos (%60GET /api/favoritos/verificar/%7Bid%7D%60)%0D%0A  - Agregar a favoritos (%60POST /api/favoritos/%7Bid%7D%60)%0D%0A  - Remover de favoritos (%60DELETE /api/favoritos/%7Bid%7D%60)%0D%0A  - Agregar al carrito (%60POST /api/carrito/agregar-producto/%7BuserId%7D%60)%0D%0A- %60app/categorias/page.tsx%60: Obtener categor%C3%ADas (%60GET /api/categorias/obtener%60) usando %60api.fetch%60%0D%0A- %60app/carrito/page.tsx%60:%0D%0A  - Obtener carrito (%60GET /api/carrito/obtener/%7BuserId%7D%60)%0D%0A  - Actualizar cantidad (%60PUT /api/carrito/actualizar-cantidad/%7BuserId%7D%60)%0D%0A  - Eliminar producto (%60DELETE /api/carrito/eliminar-producto/%7BuserId%7D%60)%0D%0A- %60app/login/page.tsx%60: Login (%60POST /api/usuarios/login%60)%0D%0A- %60app/ofertas/page.tsx%60: Obtener ofertas (funci%C3%B3n %60fetchOffers%60)%0D%0A- %60app/productos/%5Bid%5D/page.tsx%60: Obtener producto espec%C3%ADfico (funci%C3%B3n %60fetchProduct%60)%0D%0A- %60app/admin/productos/nuevo/page.tsx%60: Subir imagen (%60POST /api/imagenes/subir%60)%0D%0A%0D%0A#### Librer%C3%ADas (lib/)%0D%0A- %60lib/auth.tsx%60:%0D%0A  - Login (%60POST api.auth.login%60)%0D%0A  - Registro (%60POST api.auth.register%60)%0D%0A  - Logout (%60POST api.auth.logout%60)%0D%0A  - Verificar email (%60GET api.auth.checkEmail%60)%0D%0A- %60lib/catalogo.service.ts%60: Servicios para cat%C3%A1logo usando fetch gen%C3%A9rico%0D%0A- %60lib/carrito.ts%60: Servicios para carrito usando fetch gen%C3%A9rico%0D%0A- %60lib/comments.ts%60: Comentarios de productos (%60GET /product/%7Bid%7D%60, %60POST%60, etc.)%0D%0A- %60lib/user.ts%60:%0D%0A  - Obtener perfil (%60GET /api/usuarios/perfil%60)%0D%0A  - Cambiar contrase%C3%B1a (%60POST /api/usuarios/cambiar-password%60)%0D%0A  - Obtener cuenta (%60GET /api/usuarios/cuenta%60)%0D%0A- %60lib/categoria.ts%60: Gesti%C3%B3n de categor%C3%ADas con m%C3%A9todo %60fetchAPI%60%0D%0A- %60lib/products.ts%60: Servicios de productos%0D%0A- %60lib/orders.service.ts%60: Servicios de %C3%B3rdenes%0D%0A- %60lib/admin.ts%60: Funciones administrativas%0D%0A- %60lib/services/carrito.services.ts%60: Servicios adicionales de carrito%0D%0A%0D%0A#### Hooks%0D%0A- %60hooks/use-notifications.ts%60: Obtener notificaciones (%60GET /api/notificaciones%60) cada 30 segundos%0D%0A%0D%0A### Patrones de Uso%0D%0A%0D%0A1. **Directo con fetch**: La mayor%C3%ADa de las peticiones usan %60fetch%60 directamente con URLs hardcodeadas o construidas%0D%0A2. **Usando api.fetch**: Algunos usan la funci%C3%B3n gen%C3%A9rica de %60lib/api.ts%60%0D%0A3. **Servicios especializados**: Librer%C3%ADas como %60categoria.ts%60 tienen m%C3%A9todos internos que usan fetch%0D%0A4. **Hooks para polling**: %60use-notifications.ts%60 usa intervalos para actualizar datos autom%C3%A1ticamente%0D%0A%0D%0A### Manejo de Errores%0D%0A%0D%0A- Las respuestas se verifican con %60response.ok%60%0D%0A- En caso de error, se lanzan excepciones o se muestran mensajes en consola%0D%0A- Algunos lugares usan try/catch para manejar errores espec%C3%ADficos%0D%0A%0D%0A### Autenticaci%C3%B3n%0D%0A%0D%0ATodas las peticiones incluyen cookies de sesi%C3%B3n mediante %60credentials: 'include'%60, asumiendo que el backend maneja la autenticaci%C3%B3n basada en sesiones.\n",
+                            "isNew": true,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1762730016608
+                        }
+                    ]
+                }
+            ],
+            "context": {
+                "author": "Code agent",
+                "operationId": "e78ceabe-485c-49f3-8ea5-c13601ad186b",
+                "usageStatistics": {
+                    "llmCallsUsedForAnswer": 8.0,
+                    "llmCallsUsedTotal": 8.0,
+                    "llmCallsLimit": 30.0,
+                    "limitRenewalMillisecondTimestamp": 1762816151393
+                }
+            },
+            "createdAt": 1762729987746,
+            "isInternal": false
+        }
+    ],
+    "isAgent": true,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isWebDevAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "model": "default"
+}
+}

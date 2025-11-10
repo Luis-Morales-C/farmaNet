@@ -4,55 +4,55 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color palette for pharmacy theme with emerald green primary */
+  /* Updated color palette with maximum contrast and legibility */
   --background: oklch(1 0 0); /* Pure white */
-  --foreground: oklch(0.35 0 0); /* Dark gray #475569 */
+  --foreground: oklch(0.25 0 0); /* Dark charcoal for maximum readability */
   --card: oklch(0.97 0 0); /* Light gray #f1f5f9 */
-  --card-foreground: oklch(0.35 0 0);
+  --card-foreground: oklch(0.25 0 0); /* Dark text on cards for readability */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.35 0 0);
+  --popover-foreground: oklch(0.25 0 0); /* Dark text */
   --primary: oklch(0.45 0.15 160); /* Emerald green #059669 */
-  --primary-foreground: oklch(1 0 0);
+  --primary-foreground: oklch(1 0 0); /* White text on green */
   --secondary: oklch(0.55 0.15 160); /* Lighter emerald #10b981 */
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.35 0 0);
-  --accent: oklch(0.55 0.15 160);
+  --secondary-foreground: oklch(0.25 0 0); /* Dark text on light secondary */
+  --muted: oklch(0.88 0 0); /* Lighter gray for muted elements */
+  --muted-foreground: oklch(0.35 0 0); /* DARKER - was 0.55, now clearly readable */
+  --accent: oklch(0.45 0.15 160); /* Same as primary for consistency */
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.55 0.22 25); /* Red for errors */
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.92 0 0); /* Light border #e5e7eb */
-  --input: oklch(1 0 0);
+  --input: oklch(1 0 0); /* White input background */
   --ring: oklch(0.45 0.15 160 / 0.5); /* Focus ring with emerald */
   --chart-1: oklch(0.45 0.15 160);
   --chart-2: oklch(0.55 0.15 160);
-  --chart-3: oklch(0.35 0 0);
+  --chart-3: oklch(0.25 0 0); /* Dark instead of light */
   --chart-4: oklch(0.97 0 0);
   --chart-5: oklch(0.55 0.22 25);
   --radius: 0.5rem;
   --sidebar: oklch(0.97 0 0);
-  --sidebar-foreground: oklch(0.35 0 0);
+  --sidebar-foreground: oklch(0.25 0 0); /* Darker for readability */
   --sidebar-primary: oklch(0.45 0.15 160);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.55 0.15 160);
-  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-accent-foreground: oklch(0.25 0 0); /* Darker */
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.45 0.15 160 / 0.5);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
+  --background: oklch(0.145 0 0); /* Very dark gray */
+  --foreground: oklch(0.985 0 0); /* Almost white */
   --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.55 0.15 160);
+  --primary: oklch(0.55 0.15 160); /* Lighter emerald for dark mode */
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted-foreground: oklch(0.85 0 0); /* Much lighter for dark mode */
   --accent: oklch(0.55 0.15 160);
   --accent-foreground: oklch(0.145 0 0);
   --destructive: oklch(0.396 0.141 25.723);
@@ -76,8 +76,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-dm-sans);
+  --font-space-grotesk: "Space Grotesk";
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -122,5 +122,24 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom utilities for better readability */
+@layer components {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .heading-1 {
+    @apply text-4xl md:text-6xl font-bold font-space-grotesk text-foreground;
+  }
+
+  .heading-2 {
+    @apply text-3xl font-bold font-space-grotesk text-foreground;
+  }
+
+  .heading-3 {
+    @apply text-xl font-semibold font-space-grotesk text-foreground;
   }
 }

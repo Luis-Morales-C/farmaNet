@@ -1,5 +1,6 @@
 // types/productos.ts
 import { catalogoService } from './catalogo.service'
+import { api } from './api'
 
 export interface Producto {
   id: string
@@ -56,6 +57,40 @@ export interface ProductoFiltros {
   requiereReceta?: boolean
   activo?: boolean
   ordenarPor?: "precio-asc" | "precio-desc" | "nombre" | "rating"
+}
+
+// Función para manejar llamadas API con autenticación
+async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const token = localStorage.getItem('auth-token');
+  
+  const defaultOptions: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+  };
+
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+  const response = await api.fetch(url, {
+    ...defaultOptions,
+    ...options,
+  });
+
+  // Si recibimos un 401, probablemente el token haya expirado
+  if (response.status === 401) {
+    // Redirigir a login o mostrar mensaje
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+  }
+
+  return response;
 }
 
 
@@ -134,14 +169,11 @@ export const productService = {
       if (filtros?.ordenarPor) params.append('ordenarPor', filtros.ordenarPor)
 
   
-      const url = `http://localhost:8080/api/productos/obtener-productos${params.toString() ? '?' + params.toString() : ''}`
+      const url = `${api.products.list}${params.toString() ? '?' + params.toString() : ''}`
       console.log('Fetching products from:', url)
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      const response = await apiCall(url, {
+        method: 'GET'
       })
 
       if (!response.ok) {
@@ -166,7 +198,7 @@ export const productService = {
 
   async getProductoPorId(id: string): Promise<Producto> {
     try {
-      const response = await fetch(`http://localhost:8080/api/productos/${id}`)
+      const response = await apiCall(`${api.products.get(id)}`)
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
       }
@@ -227,7 +259,7 @@ export const productService = {
 
   async getCategorias(): Promise<CategoriaDTO[]> {
     try {
-      const response = await fetch('http://localhost:8080/api/categorias/obtener')
+      const response = await apiCall(api.categories.getAll)
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
       }

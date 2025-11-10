@@ -2,133 +2,75 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
-import { type Categoria, categoriaService } from "@/lib/categoria"
+import { ChevronRight } from "lucide-react"
+import { api } from '@/lib/api'
 
-export default function CategoriasPage() {
-  const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+interface Category {
+  id: string
+  nombre: string
+  descripcion: string
+}
+
+export default function CategoriesPage() {
+  const [categories, setCategories]= useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadCategorias()
+    fetchCategories()
   }, [])
 
-  const loadCategorias = async () => {
+  const fetchCategories = async () => {
     try {
-      // Obtener categorías raíz
-      const data = await categoriaService.getCategoriasRaiz()
-      
-      // Enriquecer con subcategorías
-      const categoriasConSubs = await categoriaService.enriquecerConSubcategorias(data)
-      
-      setCategorias(categoriasConSubs)
+      const response = await api.fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categorias/obtener`)
+      const result = await response.json()
+      if (Array.isArray(result)) {
+        setCategories(result)
+      }
     } catch (error) {
-      console.error("Error loading categories:", error)
+      console.error("Error fetching categories:", error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando categorías...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-foreground mb-2">Categorías de Productos</h1>
+          <p className="text-muted text-lg">
+            Explora nuestras categorías organizadas para encontrar exactamente lo que necesitas
+          </p>
+        </div>
 
-      <main className="flex-1">
-        <div className="container mx-auto px-4 py-8">
-          {/* Page Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4 font-space-grotesk">
-              Categorías de Productos
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Explora nuestras categorías organizadas para encontrar exactamente lo que necesitas
-            </p>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted">Cargando categorías...</p>
           </div>
-
-          {/* Categories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {categorias.map((categoria) => (
-              <Card 
-                key={categoria.id} 
-                className="group hover:shadow-lg transition-all duration-200 overflow-hidden"
-              >
-                <div className="relative">
-                  <img
-                    src={categoria.imagen || categoria.imagenUrl || "/placeholder.svg"}
-                    alt={categoria.nombre}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
-                  {categoria.productCount && categoria.productCount > 0 && (
-                    <Badge className="absolute top-4 right-4 bg-primary">
-                      {categoria.productCount} productos
-                    </Badge>
-                  )}
-                </div>
-
-                <CardHeader>
-                  <CardTitle className="text-xl font-space-grotesk">
-                    {categoria.nombre}
-                  </CardTitle>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
-                    {categoria.descripcion}
-                  </p>
-
-                  {categoria.subcategorias && categoria.subcategorias.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold mb-2 text-sm">Subcategorías:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {categoria.subcategorias.slice(0, 4).map((sub, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {sub}
-                          </Badge>
-                        ))}
-                        {categoria.subcategorias.length > 4 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{categoria.subcategorias.length - 4} más
-                          </Badge>
-                        )}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {categories.map((category) => (
+              <Link key={category.id} href={`/categorias/${category.id}`}>
+                <div className="bg-gradient-to-br from-white to-background border border-border rounded-lg p-8 hover:shadow-lg transition group cursor-pointer">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition">
+                        {category.nombre}
+                      </h3>
+                      <p className="text-muted mb-4">{category.descripcion}</p>
+                      <div className="inline-flex items-center gap-2 text-primary font-medium group-hover:gap-3 transition">
+                        Ver productos
+                        <ChevronRight className="w-5 h-5" />
                       </div>
                     </div>
-                  )}
-
-                  <Button asChild className="w-full group">
-                    <Link href={`/catalogo?categoria=${categoria.id}`}>
-                      Ver Productos
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+                    <div className="text-5xl">💊</div>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
-        </div>
-      </main>
-
-      <Footer />
+        )}
+      </div>
     </div>
   )
 }

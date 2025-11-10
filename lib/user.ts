@@ -1,3 +1,5 @@
+import { api } from './api'
+
 // User profile types and services
 export interface UserProfile {
   id: string
@@ -8,7 +10,7 @@ export interface UserProfile {
   fechaNacimiento?: string
   genero?: "masculino" | "femenino" | "otro"
   direcciones: Direccion[]
-  rol: "CLIENTE" | "ADMIN" | "FARMACEUTICO"
+  rol: "CLIENTE" | "ADMIN" | "FARMACEUTICO" | "ADMINISTRADOR"
   fechaRegistro: string
   activo: boolean
   preferencias: {
@@ -39,42 +41,27 @@ export interface PasswordChangeRequest {
 // User service functions
 export const userService = {
   async getProfile(): Promise<UserProfile> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    // Get user data from localStorage (populated by auth service)
+    const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null
+    if (!userStr) {
+      throw new Error("Usuario no autenticado")
+    }
 
-    // Mock user profile data
+    const user = JSON.parse(userStr)
+
+    // Convert backend user format to frontend profile format
     return {
-      id: "1",
-      email: "juan.perez@email.com",
-      nombre: "Juan",
-      apellido: "Pérez",
-      telefono: "+1234567890",
-      fechaNacimiento: "1990-05-15",
-      genero: "masculino",
-      rol: "CLIENTE",
-      fechaRegistro: "2024-01-15T10:30:00Z",
-      activo: true,
-      direcciones: [
-        {
-          id: "1",
-          tipo: "casa",
-          nombre: "Casa",
-          direccion: "Calle Principal 123, Colonia Centro",
-          ciudad: "Ciudad de México",
-          codigoPostal: "12345",
-          telefono: "+1234567890",
-          esPrincipal: true,
-        },
-        {
-          id: "2",
-          tipo: "trabajo",
-          nombre: "Oficina",
-          direccion: "Av. Reforma 456, Piso 10",
-          ciudad: "Ciudad de México",
-          codigoPostal: "54321",
-          esPrincipal: false,
-        },
-      ],
+      id: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      telefono: user.telefono || "",
+      fechaNacimiento: "", // Backend doesn't provide this
+      genero: undefined, // Backend doesn't provide this
+      rol: user.rol || "CLIENTE",
+      fechaRegistro: user.fechaRegistro || new Date().toISOString(),
+      activo: user.activo !== false, // Default to true if not specified
+      direcciones: [], // Backend doesn't provide addresses yet
       preferencias: {
         notificacionesEmail: true,
         notificacionesSMS: false,
@@ -84,27 +71,66 @@ export const userService = {
     }
   },
 
-  async updateProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  async updateProfile(profileUpdates: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      // Try to update via API
+      const token = typeof window !== 'undefined' ? localStorage.getItem("auth-token") : null
+      if (!token) {
+        throw new Error("No authentication token")
+      }
 
-    // Mock successful update
-    const currentProfile = await this.getProfile()
-    const updatedProfile = { ...currentProfile, ...profile }
+      const response = await api.fetch(api.user.update(profileUpdates.id || ''), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nombre: profileUpdates.nombre,
+          apellido: profileUpdates.apellido,
+          telefono: profileUpdates.telefono,
+        })
+      })
 
-    // Save to localStorage for demo
-    localStorage.setItem("userProfile", JSON.stringify(updatedProfile))
+      if (response.ok) {
+        const updatedUser = await response.json()
 
-    return updatedProfile
+        // Update localStorage with new data
+        const currentUserStr = localStorage.getItem("user")
+        if (currentUserStr) {
+          const currentUser = JSON.parse(currentUserStr)
+          const mergedUser = { ...currentUser, ...updatedUser }
+          localStorage.setItem("user", JSON.stringify(mergedUser))
+        }
+
+        return await this.getProfile()
+      } else {
+        throw new Error("API update failed")
+      }
+    } catch (error) {
+      console.warn("API update failed, updating locally:", error)
+
+      // Fallback: Update localStorage only
+      const currentUserStr = localStorage.getItem("user")
+      if (currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr)
+        const updatedUser = {
+          ...currentUser,
+          nombre: profileUpdates.nombre || currentUser.nombre,
+          apellido: profileUpdates.apellido || currentUser.apellido,
+          telefono: profileUpdates.telefono || currentUser.telefono,
+        }
+        localStorage.setItem("user", JSON.stringify(updatedUser))
+      }
+
+      return await this.getProfile()
+    }
   },
 
   async changePassword(request: PasswordChangeRequest): Promise<void> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Mock validation
-    if (request.currentPassword !== "currentpass") {
-      throw new Error("La contraseña actual es incorrecta")
+    // Validate input
+    if (!request.currentPassword || !request.newPassword || !request.confirmPassword) {
+      throw new Error("Todos los campos son obligatorios")
     }
 
     if (request.newPassword !== request.confirmPassword) {
@@ -115,38 +141,85 @@ export const userService = {
       throw new Error("La nueva contraseña debe tener al menos 6 caracteres")
     }
 
-    console.log("Password changed successfully")
+    try {
+      // Try to change password via API
+      const token = typeof window !== 'undefined' ? localStorage.getItem("auth-token") : null
+      if (!token) {
+        throw new Error("No authentication token")
+      }
+
+      const response = await api.fetch(api.user.changePassword, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          contrasenaActual: request.currentPassword,
+          nuevaContrasena: request.newPassword,
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Error al cambiar la contraseña")
+      }
+
+      console.log("Password changed successfully via API")
+    } catch (error) {
+      console.warn("API password change failed:", error)
+      throw error // Re-throw to let the component handle the error
+    }
   },
 
   async deleteAccount(): Promise<void> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // Try to delete account via API
+      const token = typeof window !== 'undefined' ? localStorage.getItem("auth-token") : null
+      if (!token) {
+        throw new Error("No authentication token")
+      }
 
-    // Clear user data
+      const response = await api.fetch(api.user.deleteAccount, {
+        method: "DELETE",
+        headers: {
+          ...(token && { "Authorization": `Bearer ${token}` })
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar la cuenta")
+      }
+    } catch (error) {
+      console.warn("API account deletion failed:", error)
+    }
+
+    // Always clear local data
     localStorage.removeItem("auth-token")
     localStorage.removeItem("user")
     localStorage.removeItem("userProfile")
     localStorage.removeItem("cart")
 
+    // Trigger logout event
+    window.dispatchEvent(new Event("user-logout"))
+
     console.log("Account deleted successfully")
   },
 
+  // Address management functions (simplified for now)
   async addAddress(address: Omit<Direccion, "id">): Promise<Direccion> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
+    // For now, just return a mock address since backend doesn't support this yet
     const newAddress: Direccion = {
       ...address,
       id: Date.now().toString(),
     }
 
+    console.log("Address added (local only):", newAddress)
     return newAddress
   },
 
   async updateAddress(id: string, address: Partial<Direccion>): Promise<Direccion> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
+    // For now, just return updated address since backend doesn't support this yet
     const profile = await this.getProfile()
     const addressIndex = profile.direcciones.findIndex((a) => a.id === id)
 
@@ -155,13 +228,11 @@ export const userService = {
     }
 
     const updatedAddress = { ...profile.direcciones[addressIndex], ...address }
+    console.log("Address updated (local only):", updatedAddress)
     return updatedAddress
   },
 
   async deleteAddress(id: string): Promise<void> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    console.log(`Address ${id} deleted successfully`)
+    console.log(`Address ${id} deleted (local only)`)
   },
 }

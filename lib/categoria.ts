@@ -1,6 +1,8 @@
-// lib/categorias.ts
+//lib/categorias.ts
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+import { api } from './api'
 
 // ==================== INTERFACES ====================
 
@@ -13,7 +15,7 @@ export interface CategoriaDTO {
   orden?: number;
   esCategoriaRaiz: boolean;
   categoriaPadreId?: string;
-  categoriaPadreNombre?: string;
+  categoriaPadreNombre?:string;
 }
 
 export interface Categoria {
@@ -26,21 +28,21 @@ export interface Categoria {
   orden?: number;
   esCategoriaRaiz: boolean;
   categoriaPadreId?: string;
-  categoriaPadreNombre?: string;
-  productCount?: number;
+  categoriaPadreNombre?:string;
+ productCount?: number;
   subcategorias?: string[];
   subcategoriasCompletas?: Categoria[];
 }
 
 export interface CategoriaJerarquia extends Categoria {
-  nivel: number;
+  nivel:number;
   hijos: CategoriaJerarquia[];
 }
 
 export interface ResultadoBusqueda {
   categorias: Categoria[];
   total: number;
-  termino: string;
+  termino:string;
 }
 
 interface FetchOptions {
@@ -50,45 +52,77 @@ interface FetchOptions {
   signal?: AbortSignal;
 }
 
+//Funcin para manejar llamadas API con autenticacin
+async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const token =localStorage.getItem('auth-token');
+  
+  const defaultOptions: RequestInit = {
+    credentials: 'include', // Importante para las cookies/sesiones
+   headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+   },
+  };
+
+  const response = await api.fetch(endpoint, {
+    ...defaultOptions,
+    ...options,
+  });
+
+  // Si recibimosun401, probablemente el token haya expirado
+  if (response.status === 401) {
+    // Redirigir a login o mostrar mensaje
+    localStorage.removeItem('auth-token');
+   localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      window.location.href= '/login';
+    }
+    throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+  }
+
+  return response;
+}
+
 // ==================== SERVICIO ====================
 
-class CategoriaService {
+class CategoriaService{
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
 
-  constructor() {
-    this.baseURL = `${API_BASE_URL}/categorias`;
+ constructor(){
+    this.baseURL = api.categories.getAll.replace(/\/obtener$/, '');
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-  }
+ }
 
   // Método privado para hacer fetch
-  private async fetchAPI<T>(
+private async fetchAPI<T>(
     endpoint: string,
     options: FetchOptions = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
-    
+ ): Promise<T> {
+    const url = `${endpoint.startsWith('http') ? endpoint : endpoint}`;
+
     const config: RequestInit = {
       method: options.method || 'GET',
       headers: {
         ...this.defaultHeaders,
-        ...options.headers,
+       ...options.headers,
       },
       signal: options.signal,
     };
 
-    if (options.body) {
-      config.body = options.body;
+    if (options.body){
+      config.body= options.body;
     }
 
     try {
-      const response = await fetch(url, config);
+      const response = await apiCall(url, config);
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Error desconocido');
+        const errorText =await response.text().catch(() => 'Errordesconocido');
         throw new Error(
           `Error ${response.status}: ${response.statusText}. ${errorText}`
         );
@@ -100,27 +134,27 @@ class CategoriaService {
       }
 
       return JSON.parse(text) as T;
-    } catch (error) {
+    } catch (error){
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error('La petición fue cancelada');
+throw new Error('La petición fue cancelada');
         }
         throw error;
       }
       throw new Error('Error desconocido al realizar la petición');
-    }
+   }
   }
 
-  // Transformar DTO a Categoria
+  // Transformar DTO aCategoria
   private transformCategoria(dto: CategoriaDTO): Categoria {
     return {
       id: dto.id,
-      nombre: dto.nombre,
+      nombre:dto.nombre,
       descripcion: dto.descripcion || '',
       imagenUrl: dto.imagenUrl,
       imagen: dto.imagenUrl,
       keywords: dto.keywords || [],
-      orden: dto.orden || 0,
+      orden: dto.orden|| 0,
       esCategoriaRaiz: dto.esCategoriaRaiz,
       categoriaPadreId: dto.categoriaPadreId,
       categoriaPadreNombre: dto.categoriaPadreNombre,
@@ -128,7 +162,7 @@ class CategoriaService {
       subcategorias: [],
       subcategoriasCompletas: [],
     };
-  }
+ }
 
   private transformCategorias(dtos: CategoriaDTO[]): Categoria[] {
     return dtos.map((dto) => this.transformCategoria(dto));
@@ -141,7 +175,7 @@ class CategoriaService {
    */
   async getCategorias(signal?: AbortSignal): Promise<Categoria[]> {
     try {
-      const dtos = await this.fetchAPI<CategoriaDTO[]>('/obtener', { signal });
+      const dtos = await this.fetchAPI<CategoriaDTO[]>(api.categories.getAll, { signal });
       return this.transformCategorias(dtos);
     } catch (error) {
       console.error('Error al obtener todas las categorías:', error);
@@ -154,7 +188,7 @@ class CategoriaService {
    */
   async getCategoriasRaiz(signal?: AbortSignal): Promise<Categoria[]> {
     try {
-      const dtos = await this.fetchAPI<CategoriaDTO[]>('/raiz', { signal });
+      const dtos = await this.fetchAPI<CategoriaDTO[]>(api.categories.raiz, { signal });
       return this.transformCategorias(dtos);
     } catch (error) {
       console.error('Error al obtener categorías raíz:', error);
@@ -175,7 +209,7 @@ class CategoriaService {
 
     try {
       const dtos = await this.fetchAPI<CategoriaDTO[]>(
-        `/subcategorias/${categoriaPadreId}`,
+        api.categories.subcategories(categoriaPadreId),
         { signal }
       );
       return this.transformCategorias(dtos);
@@ -202,12 +236,12 @@ class CategoriaService {
 
     try {
       const dtos = await this.fetchAPI<CategoriaDTO[]>(
-        `/buscar?nombre=${encodeURIComponent(nombre)}`,
+        `${api.categories.search}?nombre=${encodeURIComponent(nombre)}`,
         { signal }
       );
-      
+
       const categorias = this.transformCategorias(dtos);
-      
+
       return {
         categorias,
         total: categorias.length,
@@ -250,13 +284,13 @@ class CategoriaService {
 
     try {
       const categoria = await this.getCategoriaPorId(categoriaId, signal);
-      
+
       if (!categoria) {
         throw new Error(`Categoría con ID ${categoriaId} no encontrada`);
       }
 
       const subcategorias = await this.getSubcategorias(categoriaId, signal);
-      
+
       return {
         ...categoria,
         subcategorias: subcategorias.map((s) => s.nombre),
@@ -362,169 +396,23 @@ class CategoriaService {
       const ruta: Categoria[] = [];
 
       let categoriaActual = mapa.get(categoriaId);
-      
+
       while (categoriaActual) {
         ruta.unshift(categoriaActual);
-        
+
         if (categoriaActual.categoriaPadreId) {
           categoriaActual = mapa.get(categoriaActual.categoriaPadreId);
         } else {
-          break;
+          categoriaActual = undefined as any;
         }
       }
 
       return ruta;
     } catch (error) {
-      console.error(`Error al obtener ruta de breadcrumb para ${categoriaId}:`, error);
+      console.error(`Error al obtener breadcrumb para ${categoriaId}:`, error);
       throw error;
-    }
-  }
-
-  /**
-   * Filtrar categorías localmente
-   */
-  filtrarLocal(
-    categorias: Categoria[],
-    filtros: {
-      nombre?: string;
-      esCategoriaRaiz?: boolean;
-      categoriaPadreId?: string;
-      keywords?: string[];
-    }
-  ): Categoria[] {
-    return categorias.filter((categoria) => {
-      if (filtros.nombre) {
-        const nombreLower = categoria.nombre.toLowerCase();
-        const filtroLower = filtros.nombre.toLowerCase();
-        if (!nombreLower.includes(filtroLower)) {
-          return false;
-        }
-      }
-
-      if (filtros.esCategoriaRaiz !== undefined) {
-        if (categoria.esCategoriaRaiz !== filtros.esCategoriaRaiz) {
-          return false;
-        }
-      }
-
-      if (filtros.categoriaPadreId !== undefined) {
-        if (categoria.categoriaPadreId !== filtros.categoriaPadreId) {
-          return false;
-        }
-      }
-
-      if (filtros.keywords && filtros.keywords.length > 0) {
-        const categoriaKeywords = categoria.keywords || [];
-        const tieneKeyword = filtros.keywords.some((k) =>
-          categoriaKeywords.some((ck) =>
-            ck.toLowerCase().includes(k.toLowerCase())
-          )
-        );
-        if (!tieneKeyword) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  /**
-   * Ordenar categorías
-   */
-  ordenar(
-    categorias: Categoria[],
-    campo: keyof Categoria = 'nombre',
-    orden: 'asc' | 'desc' = 'asc'
-  ): Categoria[] {
-    return [...categorias].sort((a, b) => {
-      const valorA = a[campo];
-      const valorB = b[campo];
-
-      if (valorA === undefined || valorA === null) return 1;
-      if (valorB === undefined || valorB === null) return -1;
-
-      let comparacion = 0;
-      
-      if (typeof valorA === 'string' && typeof valorB === 'string') {
-        comparacion = valorA.localeCompare(valorB);
-      } else if (typeof valorA === 'number' && typeof valorB === 'number') {
-        comparacion = valorA - valorB;
-      } else if (typeof valorA === 'boolean' && typeof valorB === 'boolean') {
-        comparacion = (valorA === valorB) ? 0 : valorA ? 1 : -1;
-      }
-
-      return orden === 'asc' ? comparacion : -comparacion;
-    });
-  }
-
-  /**
-   * Agrupar categorías por campo
-   */
-  agrupar(
-    categorias: Categoria[],
-    campo: keyof Categoria
-  ): Record<string, Categoria[]> {
-    return categorias.reduce((grupos, categoria) => {
-      const valor = categoria[campo];
-      const clave = String(valor ?? 'sin-valor');
-      
-      if (!grupos[clave]) {
-        grupos[clave] = [];
-      }
-      
-      grupos[clave].push(categoria);
-      return grupos;
-    }, {} as Record<string, Categoria[]>);
-  }
-
-  /**
-   * Verificar si tiene subcategorías
-   */
-  async tieneSubcategorias(
-    categoriaId: string,
-    signal?: AbortSignal
-  ): Promise<boolean> {
-    try {
-      const subcategorias = await this.getSubcategorias(categoriaId, signal);
-      return subcategorias.length > 0;
-    } catch (error) {
-      console.error(`Error al verificar subcategorías de ${categoriaId}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Contar descendientes de una categoría
-   */
-  async contarDescendientes(
-    categoriaId: string,
-    signal?: AbortSignal
-  ): Promise<number> {
-    try {
-      const todas = await this.getCategorias(signal);
-      const descendientes = new Set<string>();
-
-      const buscarDescendientes = (id: string) => {
-        todas.forEach((cat) => {
-          if (cat.categoriaPadreId === id && !descendientes.has(cat.id)) {
-            descendientes.add(cat.id);
-            buscarDescendientes(cat.id);
-          }
-        });
-      };
-
-      buscarDescendientes(categoriaId);
-      return descendientes.size;
-    } catch (error) {
-      console.error(`Error al contar descendientes de ${categoriaId}:`, error);
-      return 0;
     }
   }
 }
 
-
-
-export const categoriaService = new CategoriaService();
-export { CategoriaService };
-export default categoriaService;
+export const categoriaService = new CategoriaService()

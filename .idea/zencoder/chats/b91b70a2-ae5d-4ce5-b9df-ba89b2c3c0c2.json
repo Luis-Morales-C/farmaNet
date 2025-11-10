@@ -1,0 +1,58 @@
+{
+    "checksum": "d84b0b76d1e471b53d4f58b7dc3c9df042561acb49681e247f6bb67c74867b2a",
+    "data": {
+    "id": "b91b70a2-ae5d-4ce5-b9df-ba89b2c3c0c2",
+    "createdAt": 1759966763673,
+    "updatedAt": 1759966763681,
+    "title": "No esta funcionando el boton \"confirmar pedido\"",
+    "messages": [
+        {
+            "id": "ce3544b4-0abc-42c8-a437-32c9d437a990",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "No esta funcionando el boton \"confirmar pedido\""
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "lib/catalogo.service.ts",
+                    "fsPath": "C:/Users/ANGEL/Downloads/farmacia-frontend/lib/catalogo.service.ts",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "// lib/catalogo.service.ts\nimport { Producto, ProductoFiltros } from './products'\n\nconst API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || \"http://localhost:8080\"\n\nclass CatalogoService {\n  private async request<T>(\n    endpoint: string,\n    options: RequestInit = {}\n  ): Promise<T> {\n    const response = await fetch(`${API_BASE_URL}${endpoint}`, {\n      ...options,\n      headers: {\n        \"Content-Type\": \"application/json\",\n        ...options.headers,\n      },\n    })\n\n    if (!response.ok) {\n      throw new Error(`Error ${response.status}: ${response.statusText}`)\n    }\n\n    const data = await response.json()\n    return data\n  }\n\n  async obtenerCatalogo(): Promise<Producto[]> {\n    try {\n      return await this.request<Producto[]>('/api/catalogo')\n    } catch (error) {\n      console.error('Error obteniendo catálogo:', error)\n      throw new Error('No se pudo cargar el catálogo de productos')\n    }\n  }\n\n  async buscarProductos(nombre: string): Promise<Producto[]> {\n    try {\n      const params = new URLSearchParams({ nombre })\n      return await this.request<Producto[]>(`/api/catalogo/buscar?${params}`)\n    } catch (error) {\n      console.error('Error buscando productos:', error)\n      throw new Error('Error al buscar productos')\n    }\n  }\n\n  async buscarPorPrincipioActivo(principioActivo: string): Promise<Producto[]> {\n    try {\n      const params = new URLSearchParams({ principioActivo })\n      return await this.request<Producto[]>(`/api/catalogo/buscar/principio-activo?${params}`)\n    } catch (error) {\n      console.error('Error buscando por principio activo:', error)\n      throw new Error('Error al buscar productos por principio activo')\n    }\n  }\n\n  async obtenerOfertas(): Promise<Producto[]> {\n    try {\n      return await this.request<Producto[]>('/api/catalogo/ofertas')\n    } catch (error) {\n      console.error('Error obteniendo ofertas:', error)\n      throw new Error('Error al obtener productos en oferta')\n    }\n  }\n\n  async obtenerProductosPorCategoria(categoriaId: string): Promise<Producto[]> {\n    try {\n      return await this.request<Producto[]>(`/api/catalogo/categoria/${categoriaId}`)\n    } catch (error) {\n      console.error('Error obteniendo productos por categoría:', error)\n      throw new Error('Error al obtener productos de la categoría')\n    }\n  }\n\n  async obtenerProductosConFiltros(filtros?: ProductoFiltros): Promise<Producto[]> {\n    try {\n      // Usar el endpoint existente de productos con filtros\n      const params = new URLSearchParams()\n\n      if (filtros?.busqueda) params.append('busqueda', filtros.busqueda)\n      if (filtros?.categoriaId) params.append('categoriaId', filtros.categoriaId)\n      if (filtros?.precioMin !== undefined) params.append('precioMin', filtros.precioMin.toString())\n      if (filtros?.precioMax !== undefined) params.append('precioMax', filtros.precioMax.toString())\n      if (filtros?.requiereReceta !== undefined) params.append('requiereReceta', filtros.requiereReceta.toString())\n      if (filtros?.activo !== undefined) params.append('activo', filtros.activo.toString())\n      if (filtros?.ordenarPor) params.append('ordenarPor', filtros.ordenarPor)\n\n      const url = `/api/productos/obtener-productos${params.toString() ? '?' + params.toString() : ''}`\n      return await this.request<Producto[]>(url)\n    } catch (error) {\n      console.error('Error obteniendo productos con filtros:', error)\n      // Fallback al catálogo completo\n      return await this.obtenerCatalogo()\n    }\n  }\n}\n\nexport const catalogoService = new CatalogoService()",
+                    "language": "typescript"
+                }
+            },
+            "createdAt": 1759966763681,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "No esta funcionando el boton \"confirmar pedido\""
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        }
+    ],
+    "isAgent": true,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isWebDevAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "model": "default"
+}
+}

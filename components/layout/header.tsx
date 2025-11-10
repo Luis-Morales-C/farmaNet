@@ -1,19 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, ShoppingCart, User, Menu, X, Heart, Bell } from "lucide-react"
+import { Search, ShoppingCart, User, Menu, X, Heart, Bell, Shield, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,19 +27,26 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useAuth } from "@/lib/auth"
 import { useCart } from "@/lib/cart"
+import { useNotifications } from "@/hooks/use-notifications"
+import { useFavorites } from "@/hooks/use-favorites"
+import { useToast } from "@/hooks/use-toast"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const { user, isLoading, logout } = useAuth()
   const isAuthenticated = !!user && !isLoading
   const { itemCount } = useCart()
+  const { unreadCount } = useNotifications()
+  const { favoritesCount } = useFavorites()
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleLogout = async () => {
     await logout()
-    router.push("/login")
+    window.location.href = "/"
   }
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -91,18 +98,36 @@ export function Header() {
           {/* User Actions */}
           <div className="flex items-center space-x-2">
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative" asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              asChild
+            >
               <Link href="/notificaciones">
                 <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">3</Badge>
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
               </Link>
             </Button>
 
             {/* Favorites */}
-            <Button variant="ghost" size="icon" className="relative" asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              asChild
+            >
               <Link href="/favoritos">
                 <Heart className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">5</Badge>
+                {favoritesCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
+                    {favoritesCount > 99 ? '99+' : favoritesCount}
+                  </Badge>
+                )}
               </Link>
             </Button>
 
@@ -119,26 +144,81 @@ export function Header() {
             {/* User Menu */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">{user?.nombre} {user?.apellido}</span>
-                <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      Cerrar Sesión
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Estás seguro de que quieres cerrar sesión?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Se cerrará tu sesión actual y serás redirigido a la página de inicio de sesión.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleLogout}>Cerrar Sesión</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <span className="text-sm font-medium hidden md:inline">{user?.nombre} {user?.apellido}</span>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsUserMenuOpen(true)}>
+                  <User className="h-5 w-5" />
+                </Button>
+                
+                <Dialog open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Mi Cuenta
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="flex flex-col space-y-2">
+                        <Button variant="ghost" className="justify-start" asChild onClick={() => setIsUserMenuOpen(false)}>
+                          <Link href="/perfil">
+                            <User className="mr-2 h-4 w-4" />
+                            Mi Perfil
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" className="justify-start" asChild onClick={() => setIsUserMenuOpen(false)}>
+                          <Link href="/pedidos">
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            Mis Pedidos
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" className="justify-start" asChild onClick={() => setIsUserMenuOpen(false)}>
+                          <Link href="/favoritos">
+                            <Heart className="mr-2 h-4 w-4" />
+                            Favoritos
+                          </Link>
+                        </Button>
+                        {user?.rol === "ADMIN" && (
+                          <Button variant="ghost" className="justify-start" asChild onClick={() => setIsUserMenuOpen(false)}>
+                            <Link href="/admin">
+                              <Shield className="mr-2 h-4 w-4" />
+                              Panel Admin
+                            </Link>
+                          </Button>
+                        )}
+                        <div className="border-t my-2"></div>
+                        <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              className="justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                setIsUserMenuOpen(false) // Close user menu when logout dialog opens
+                              }}
+                            >
+                              <LogOut className="mr-2 h-4 w-4" />
+                              Cerrar Sesión
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Estás seguro de que quieres cerrar sesión?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Se cerrará tu sesión actual y serás redirigido a la página de inicio.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleLogout}>
+                                Cerrar Sesión
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             ) : (
               <div className="flex items-center space-x-2">

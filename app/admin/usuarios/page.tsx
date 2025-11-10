@@ -18,6 +18,26 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
+  // Verificar permisos de admin
+  if (!user || user.rol !== "ADMIN") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Acceso Denegado</h2>
+              <p className="text-muted-foreground mb-4">No tienes permisos para acceder a esta sección.</p>
+              <Button asChild>
+                <Link href="/">Volver al Inicio</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -30,35 +50,14 @@ export default function AdminUsers() {
       }
     }
 
-    if (user?.role === "admin") {
-      loadUsers()
-    }
-  }, [user])
+    loadUsers()
+  }, [])
 
   const filteredUsers = users.filter(
     (u) =>
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
-
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Acceso Denegado</h2>
-              <p className="text-muted-foreground mb-4">No tienes permisos para acceder a esta sección.</p>
-              <Button asChild>
-                <Link href="/admin">Volver al Panel</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">

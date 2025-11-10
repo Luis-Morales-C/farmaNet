@@ -1,3 +1,4 @@
+import { api } from './api'
 
 export interface AdminStats {
   totalProducts: number
@@ -195,7 +196,7 @@ export const adminApi = {
   },
 
  async getCategories(): Promise<Category[]> {
-  const response = await fetch('http://localhost:8080/api/categorias/obtener')
+  const response = await api.fetch(api.categories.getAll)
   if (!response.ok) throw new Error('Error al cargar categorías')
   const data = await response.json()
   
@@ -226,7 +227,7 @@ export const adminApi = {
   },
   
  async createProduct(product: ProductoForm) {
-    const res = await fetch("http://localhost:8080/api/productos/crear", {
+    const res = await api.fetch(api.products.list, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(product),

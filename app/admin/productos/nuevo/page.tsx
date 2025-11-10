@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { api } from '@/lib/api'
 
 export default function AddProductPage() {
   const router = useRouter()
@@ -41,7 +42,9 @@ const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
   try {
     setUploading(true);
 
-    const res = await fetch("http://localhost:8080/api/imagenes/subir", {
+    const uploadUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/imagenes/subir`;
+
+    const res = await api.fetch(uploadUrl, {
       method: "POST",
       body: formData,
     });

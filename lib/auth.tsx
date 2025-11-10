@@ -1,139 +1,153 @@
-"use client"
+"useclient"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
+//Authenticationutility functions
+import { api } from '@/lib/api';
+
 export interface User {
-  id: string
-  email: string
-  name?: string
-  nombre: string
-  apellido: string
-  telefono?: string
-  direccion?: string
-  role?: "admin" | "user"
-  rol?: "CLIENTE" | "ADMIN" | "FARMACEUTICO"
-  fechaRegistro?: string
-  activo?: boolean
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  rol: string;
 }
 
-export interface AuthState {
-  user: User | null
-  isLoading: boolean
-  isAuthenticated: boolean
+export interface LoginResponse {
+  success: boolean;
+  mensaje?: string;
+  data?:{
+    id: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+    rol: string;
+    token: string;
+  };
+  error?: string;
 }
 
-const API_URL = "http://localhost:8080/api/usuarios"
-const LOGOUT_URL = "http://localhost:8080/logout"
+export interface RegisterResponse {
+  success: boolean;
+  mensaje?: string;
+  data?: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+    telefono?: string;
+    rol: string;
+  };
+  error?: string;
+}
 
 export const authService = {
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    const response = await fetch(`${API_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Error en el login: ${errorText || response.statusText}`)
-    }
-
-    const data = await response.json()
-    const token = data.token || "no-token"
-    const user = data.usuario || data.user || data
-
-    localStorage.setItem("auth-token", token)
-    localStorage.setItem("user", JSON.stringify(user))
-
-    // Disparar evento para que el carrito se sincronice
-    window.dispatchEvent(new Event("user-login"))
-
-    return { user, token }
-  },
-
-  async register(userData: {
-    email: string
-    password: string
-    nombre: string
-    apellido: string
-    telefono?: string
-  }): Promise<{ user: User; token: string }> {
-    const response = await fetch(`${API_URL}/registro`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        email: userData.email,
-        telefono: userData.telefono,
-        contraseña: userData.password,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Error en el registro: ${errorText || response.statusText}`)
-    }
-
-    const user = await response.json()
-    const token = "registro-token"
-
-    localStorage.setItem("auth-token", token)
-    localStorage.setItem("user", JSON.stringify(user))
-
-    // Disparar evento para que el carrito se sincronice
-    window.dispatchEvent(new Event("user-login"))
-
-    return { user, token }
-  },
-
-  async logout(): Promise<void> {
+  // Login user
+  login: async (email: string, password: string): Promise<LoginResponse> => {
     try {
-      const token = this.getToken()
+      const response = await api.fetch(api.auth.login, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const json = await response.json();
+      // If backend returns token, store it
+      if (json?.data?.token) {
+        localStorage.setItem('auth-token', json.data.token)
+        localStorage.setItem('user', JSON.stringify(json.data))
+      }
+
+      return json;
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Error de conexión. Por favor intenta de nuevo.',
+     };
+    }
+  },
+
+  // Register user
+  register: async (
+    nombre: string,
+    apellido: string,
+    email: string,
+    telefono: string,
+    contrasena: string
+  ): Promise<RegisterResponse> => {
+    try {
+      const response = await api.fetch(api.auth.register, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre,
+          apellido,
+          email,
+          telefono,
+          contrasena,
+        }),
+      });
+
+      const json = await response.json();
+      return json;
+    } catch (error) {
+      return {
+        success: false,
+error: 'Error de conexión. Por favor intenta de nuevo.',
+      };
+    }
+  },
+
+  // Logoutuser
+  logout: async (): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth-token');
       if (token) {
-        await fetch(LOGOUT_URL, {
-          method: "POST",
+        await api.fetch(api.auth.logout, {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-        })
+        });
       }
     } catch (error) {
-      console.error("Error calling logout API:", error)
-      // Continue with local logout even if API fails
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth-token');
     }
-
-    localStorage.removeItem("auth-token")
-    localStorage.removeItem("user")
-
-    // Disparar evento para que el carrito se limpie
-    window.dispatchEvent(new Event("user-logout"))
   },
 
-  async forgotPassword(email: string): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    console.log(`Password reset email sent to ${email}`)
+  // Check if email exists
+  checkEmail: async (email: string): Promise<boolean> => {
+    try {
+      const response = await api.fetch(api.auth.checkEmail(email));
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking email:', error);
+      return false;
+    }
   },
 
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    console.log("Password reset successfully")
+  // Get current user from localStorage
+  getCurrentUser: (): User | null=> {
+    try {
+      const user = localStorage.getItem('user');
+      return user ? JSON.parse(user) : null;
+    } catch (error) {
+      return null;
+    }
   },
 
-  getCurrentUser(): User | null {
-    if (typeof window === "undefined") return null
-    const userStr = localStorage.getItem("user")
-    return userStr ? JSON.parse(userStr) : null
-  },
-
-  getToken(): string | null {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem("auth-token")
-  },
-
-  isAuthenticated(): boolean {
-    return !!this.getToken()
+  // Get auth token from localStorage
+  getAuthToken: (): string | null => {
+    return localStorage.getItem('auth-token');
   },
 }
 
@@ -146,7 +160,7 @@ export const AuthContext = createContext<{
     nombre: string
     apellido: string
     telefono?: string
-  }) => Promise<void>
+  }) =>Promise<void>
   logout: () => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   isLoading: boolean
@@ -154,10 +168,16 @@ export const AuthContext = createContext<{
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+ const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const currentUser = authService.getCurrentUser()
+    const token = authService.getAuthToken()
+    console.log("AuthProvider initialized:", {
+      hasUser: !!currentUser,
+      hasToken: !!token,
+      user: currentUser
+    })
     setUser(currentUser)
     setIsLoading(false)
   }, [])
@@ -169,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user)
     } catch (error) {
       console.error("Error en login:", error)
-      throw error
+     throw error
     } finally {
       setIsLoading(false)
     }
@@ -184,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }) => {
     setIsLoading(true)
     try {
-      const { user } = await authService.register(userData)
+      const {user } = await authService.register(userData)
       setUser(user)
     } catch (error) {
       console.error("Error en registro:", error)
@@ -200,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
 
-  const forgotPassword = async (email: string) => {
+const forgotPassword = async (email: string) => {
     await authService.forgotPassword(email)
   }
 
@@ -212,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+const context = useContext(AuthContext)
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")
   }

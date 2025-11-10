@@ -1,20 +1,46 @@
 // lib/catalogo.service.ts
 import { Producto, ProductoFiltros } from './products'
+import { api } from './api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+
+// Función para manejar llamadas API con autenticación
+async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('auth-token');
+  
+  const defaultOptions: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+  };
+
+  const response = await api.fetch(endpoint, {
+    ...defaultOptions,
+    ...options,
+  });
+
+  // Si recibimos un 401, probablemente el token haya expirado
+  if (response.status === 401) {
+    // Redirigir a login o mostrar mensaje
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+  }
+
+  return response;
+}
 
 class CatalogoService {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    })
+    const response = await apiCall(endpoint, options)
 
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`)
@@ -26,7 +52,7 @@ class CatalogoService {
 
   async obtenerCatalogo(): Promise<Producto[]> {
     try {
-      return await this.request<Producto[]>('/api/catalogo')
+      return await this.request<Producto[]>(api.catalog.getAll)
     } catch (error) {
       console.error('Error obteniendo catálogo:', error)
       throw new Error('No se pudo cargar el catálogo de productos')
@@ -36,7 +62,7 @@ class CatalogoService {
   async buscarProductos(nombre: string): Promise<Producto[]> {
     try {
       const params = new URLSearchParams({ nombre })
-      return await this.request<Producto[]>(`/api/catalogo/buscar?${params}`)
+      return await this.request<Producto[]>(`${api.catalog.search}`)
     } catch (error) {
       console.error('Error buscando productos:', error)
       throw new Error('Error al buscar productos')
@@ -46,7 +72,7 @@ class CatalogoService {
   async buscarPorPrincipioActivo(principioActivo: string): Promise<Producto[]> {
     try {
       const params = new URLSearchParams({ principioActivo })
-      return await this.request<Producto[]>(`/api/catalogo/buscar/principio-activo?${params}`)
+      return await this.request<Producto[]>(`${api.catalog.byCategory(principioActivo)}`)
     } catch (error) {
       console.error('Error buscando por principio activo:', error)
       throw new Error('Error al buscar productos por principio activo')
@@ -55,7 +81,7 @@ class CatalogoService {
 
   async obtenerOfertas(): Promise<Producto[]> {
     try {
-      return await this.request<Producto[]>('/api/catalogo/ofertas')
+      return await this.request<Producto[]>(api.catalog.offers)
     } catch (error) {
       console.error('Error obteniendo ofertas:', error)
       throw new Error('Error al obtener productos en oferta')
@@ -64,7 +90,7 @@ class CatalogoService {
 
   async obtenerProductosPorCategoria(categoriaId: string): Promise<Producto[]> {
     try {
-      return await this.request<Producto[]>(`/api/catalogo/categoria/${categoriaId}`)
+      return await this.request<Producto[]>(api.catalog.byCategory(categoriaId))
     } catch (error) {
       console.error('Error obteniendo productos por categoría:', error)
       throw new Error('Error al obtener productos de la categoría')
