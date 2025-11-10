@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Heart, ShoppingCart, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { api } from '@/lib/api'
 
 interface Product {
   id: string
@@ -96,18 +97,18 @@ export default function CatalogPage() {
 
   const fetchProducts = async () => {
 try{
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      console.log("[v0] Fetching catalog from:", apiUrl)
+      console.log("[v0] Fetching catalog from API")
 
-      if (!apiUrl) {
-        throw new Error("API URL no configurada")
-      }
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-      const response = await fetch(`${apiUrl}/api/catalogo`, {
+      const response = await api.fetch(api.catalog.getAll, {
        method:"GET",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       console.log("[v0] Catalog response status:", response.status)
 
@@ -235,12 +236,7 @@ function ProductCard({ product }: { product: Product }) {
       if (!token) return;
 
       try {
-        const response = awaitfetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/verificar/${product.id}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
+        const response = await api.fetch(api.favorites.check(product.id))
 
         if (response.ok) {
           const result = await response.json();
@@ -266,21 +262,13 @@ function ProductCard({ product }: { product: Product }) {
       let response;
       if (isFavorite) {
         // Remove from favorites
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/${product.id}`, {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+        response = await api.fetch(api.favorites.remove(product.id), {
+          method: 'DELETE'
         });
       } else {
         // Add to favorites
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/${product.id}`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+        response = await api.fetch(api.favorites.add(product.id), {
+          method: 'POST'
         });
       }
 
@@ -305,16 +293,10 @@ function ProductCard({ product }: { product: Product }) {
 
 try{
       const userData = JSON.parse(user);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/carrito/agregar-producto/${userData.id}`, {
+      const response = await api.fetch(api.cart.add, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-       },
-        body: JSON.stringify({
-          productoId: product.id,
-          cantidad: 1
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productoId: product.id, cantidad: 1, usuarioId: userData.id })
       });
 
       if (response.ok) {

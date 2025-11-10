@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, LogOut, Package, Heart, Bell, Settings } from "lucide-react"
+import { api } from '@/lib/api'
 
 interface User {
   id: string
@@ -36,11 +37,11 @@ const handleLogout = async() => {
     try {
       const token = localStorage.getItem("auth-token");
       if (token) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/logout`, {
+        await api.fetch(api.auth.logout, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
-"Content-Type": "application/json"
+            "Content-Type": "application/json"
           }
         });
       }

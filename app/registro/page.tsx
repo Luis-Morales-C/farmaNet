@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react"
+import { api } from '@/lib/api'
 
 export default function RegisterPage() {
  const router = useRouter()
@@ -53,7 +54,7 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/registro`, {
+      const response = await api.fetch(api.auth.register, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,7 +62,7 @@ export default function RegisterPage() {
           apellido: formData.apellido,
           email: formData.email,
           telefono: formData.telefono,
-          contraseña: formData.password,
+          contrasena: formData.password,
         }),
      })
 

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ShoppingCart, Heart, Bell, User, Search, LayoutDashboard } from "lucide-react"
+import { api } from '../lib/api'
 
 export default function Header() {
   const router = useRouter()
@@ -20,7 +21,7 @@ export default function Header() {
       if (token && user) {
         try {
           const userData = JSON.parse(user)
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/carrito/obtener/${userData.id}`, {
+          const response = await api.fetch(api.cart.get, {
             headers: {
               "Authorization": `Bearer ${token}`,
               "Content-Type": "application/json"

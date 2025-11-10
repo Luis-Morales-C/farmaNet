@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth'
+import { api } from '../lib/api'
 
 interface Favorito {
   id: string
@@ -16,26 +17,14 @@ export function useFavorites() {
   const [favoritesCount, setFavoritesCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Función para obtener el token
-  const getToken = () => {
-    if (typeof window!== 'undefined') {
-      return localStorage.getItem('auth-token')
-    }
-    return null
-  }
-
   // Cargar favoritos del usuario
   const loadFavorites = async () => {
     if (!user) return
 
     setIsLoading(true)
     try {
-      const token = getToken()
-      if (!token)return
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos`, {
-headers: {
-          'Authorization': `Bearer ${token}`,
+      const response = await api.fetch(api.favorites.getAll, {
+        headers: {
           'Content-Type': 'application/json'
         }
       })
@@ -57,18 +46,10 @@ headers: {
     if (!user) return
 
     try {
-      const token = getToken()
-      if (!token) return
-
-      constresponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/conteo`, {
-headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await api.fetch(api.favorites.getAll + '/conteo')
 
       if (response.ok) {
-        const count= await response.json()
+        const count = await response.json()
         setFavoritesCount(count)
       }
     } catch (error) {
@@ -78,25 +59,17 @@ headers: {
 
   // Verificar si un producto es favorito
   const checkIsFavorite = async (productoId: string): Promise<boolean> => {
-   if (!user) return false
+    if (!user) return false
 
     try {
-      const token = getToken()
-      if (!token) return false
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/verificar/${productoId}`, {
-headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await api.fetch(api.favorites.check(productoId))
 
       if (response.ok) {
-        constresult= await response.json()
-returnresult.data
-}
-} catch (error) {
-      console.error('Error checkingfavorite status:', error)
+        const result = await response.json()
+        return !!result?.data
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error)
     }
     return false
   }
@@ -106,13 +79,9 @@ returnresult.data
     if (!user) return
 
     try {
-      const token = getToken()
-      if (!token) return
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/${productoId}`, {
-method: 'POST',
+      const response = await api.fetch(api.favorites.add(productoId), {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -131,13 +100,9 @@ method: 'POST',
     if (!user) return
 
     try {
-      const token = getToken()
-      if (!token) return
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favoritos/${productoId}`, {
-method: 'DELETE',
+      const response = await api.fetch(api.favorites.remove(productoId), {
+        method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -157,7 +122,7 @@ method: 'DELETE',
     if (user) {
       loadFavorites()
     } else {
-setFavorites([])
+      setFavorites([])
       setFavoritesCount(0)
     }
   }, [user])

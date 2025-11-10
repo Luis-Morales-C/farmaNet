@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Heart, ShoppingCart, ChevronLeft, Truck, Shield, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { api } from '@/lib/api'
 
 interface Product {
   id: string
@@ -32,7 +33,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   const fetchProduct = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/catalogo/${params.id}`)
+      const response = await api.fetch(api.products.get(params.id))
       const result = await response.json()
       if (result.success) {
         setProduct(result.data)

@@ -90,8 +90,9 @@ class CarritoService {
   }
 
   async obtenerCarrito(): Promise<Carrito> {
-    const usuarioId = this.getUsuarioId();
-    const response = await apiCall<Carrito>(`${api.cart.get}/${usuarioId}`);
+    // Según la documentación del backend el endpoint para obtener el carrito
+    // es GET /api/carrito (usa sesión o token para identificar al usuario)
+    const response = await apiCall<Carrito>(api.cart.get);
 
     if (!response.success) {
       throw new Error(response.error || 'Error al obtener el carrito');
@@ -101,8 +102,8 @@ class CarritoService {
   }
 
   async obtenerResumen(): Promise<CarritoResumen> {
-    const usuarioId = this.getUsuarioId();
-    const response = await apiCall<CarritoResumen>(`${api.cart.resumen}/${usuarioId}`);
+    // GET /api/carrito/resumen según documentación
+    const response = await apiCall<CarritoResumen>(api.cart.resumen);
 
     if (!response.success) {
       throw new Error(response.error || 'Error al obtener el resumen del carrito');
@@ -112,10 +113,11 @@ class CarritoService {
   }
 
   async agregarProducto(productoId: string, cantidad: number = 1): Promise<Carrito> {
-    const usuarioId = this.getUsuarioId();
+    // POST /api/carrito/agregar -> body: { productoId, cantidad }
+    // El backend debe identificar al usuario por sesión/cookie o token.
     const response = await apiCall<Carrito>(api.cart.add, {
       method: 'POST',
-      body: JSON.stringify({ usuarioId, productoId, cantidad }),
+      body: JSON.stringify({ productoId, cantidad }),
     });
 
     if (!response.success) {
@@ -126,10 +128,10 @@ class CarritoService {
   }
 
   async actualizarCantidad(productoId: string, cantidad: number): Promise<Carrito> {
-    const usuarioId = this.getUsuarioId();
+    // POST /api/carrito/actualizar -> body: { productoId, cantidad }
     const response = await apiCall<Carrito>(api.cart.update, {
       method: 'POST',
-      body: JSON.stringify({ usuarioId, productoId, cantidad }),
+      body: JSON.stringify({ productoId, cantidad }),
     });
 
     if (!response.success) {
@@ -140,10 +142,10 @@ class CarritoService {
   }
 
   async eliminarProducto(productoId: string): Promise<Carrito> {
-    const usuarioId = this.getUsuarioId();
+    // POST /api/carrito/eliminar -> body: { productoId }
     const response = await apiCall<Carrito>(api.cart.remove, {
       method: 'POST',
-      body: JSON.stringify({ usuarioId, productoId }),
+      body: JSON.stringify({ productoId }),
     });
 
     if (!response.success) {
@@ -154,25 +156,16 @@ class CarritoService {
   }
 
   async limpiarCarrito(): Promise<void> {
-    const usuarioId = this.getUsuarioId();
-    const response = await apiCall<null>(`${api.cart.get}/limpiar/${usuarioId}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.success) {
-      throw new Error(response.error || 'Error al limpiar carrito');
-    }
+    // Endpoint de 'limpiar carrito' no aparece en la documentación proporcionada.
+    // Opción A: Implementar en backend un endpoint DELETE /api/carrito/limpiar
+    // Opción B: En el frontend iterar y eliminar cada item usando /api/carrito/eliminar
+    throw new Error('Endpoint para limpiar carrito no implementado en backend. Ver plan de corrección en la documentación.');
   }
 
   async verificarDisponibilidad(): Promise<{ disponible: boolean; mensaje: string }> {
-    const usuarioId = this.getUsuarioId();
-    const response = await apiCall<{ disponible: boolean; mensaje: string }>(`${api.cart.get}/verificar/${usuarioId}`);
-
-    if (!response.success) {
-      throw new Error(response.error || 'Error al verificar disponibilidad');
-    }
-
-    return response.data!;
+    // Endpoint de 'verificar disponibilidad' no está documentado.
+    // Si necesitas verificar stock, utiliza el endpoint de producto (/api/productos/{id})
+    throw new Error('Endpoint para verificar disponibilidad no implementado en backend.');
   }
 }
 
