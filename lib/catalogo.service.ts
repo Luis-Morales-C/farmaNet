@@ -73,23 +73,23 @@ class CatalogoService {
 
   async obtenerProductosConFiltros(filtros?: ProductoFiltros): Promise<Producto[]> {
     try {
-      // Usar el endpoint existente de productos con filtros
-      const params = new URLSearchParams()
+      // Construir parámetros de consulta
+      const params = new URLSearchParams();
 
-      if (filtros?.busqueda) params.append('busqueda', filtros.busqueda)
-      if (filtros?.categoriaId) params.append('categoriaId', filtros.categoriaId)
-      if (filtros?.precioMin !== undefined) params.append('precioMin', filtros.precioMin.toString())
-      if (filtros?.precioMax !== undefined) params.append('precioMax', filtros.precioMax.toString())
-      if (filtros?.requiereReceta !== undefined) params.append('requiereReceta', filtros.requiereReceta.toString())
-      if (filtros?.activo !== undefined) params.append('activo', filtros.activo.toString())
-      if (filtros?.ordenarPor) params.append('ordenarPor', filtros.ordenarPor)
+      if (filtros?.busqueda) params.append('busqueda', filtros.busqueda);
+      if (filtros?.categoriaId) params.append('categoriaId', filtros.categoriaId);
+      if (filtros?.precioMin !== undefined) params.append('precioMin', filtros.precioMin.toString());
+      if (filtros?.precioMax !== undefined) params.append('precioMax', filtros.precioMax.toString());
+      if (filtros?.requiereReceta !== undefined) params.append('requiereReceta', filtros.requiereReceta.toString());
+      if (filtros?.activo !== undefined) params.append('activo', filtros.activo.toString());
+      if (filtros?.ordenarPor) params.append('ordenarPor', filtros.ordenarPor);
 
-      const url = `/api/productos/obtener-productos${params.toString() ? '?' + params.toString() : ''}`
-      return await this.request<Producto[]>(url)
+      const url = `/api/productos/obtener-productos${params.toString() ? '?' + params.toString() : ''}`;
+      return await this.request<Producto[]>(url);
     } catch (error) {
-      console.error('Error obteniendo productos con filtros:', error)
+      console.error('Error obteniendo productos con filtros:', error);
       // Fallback al catálogo completo
-      return await this.obtenerCatalogo()
+      return await this.obtenerCatalogo();
     }
   }
 }

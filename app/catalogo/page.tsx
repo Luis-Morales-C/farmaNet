@@ -272,6 +272,11 @@ export default function CatalogoPage() {
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className="pl-10"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      loadProductos()
+                    }
+                  }}
                 />
               </div>
             </div>
