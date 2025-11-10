@@ -281,8 +281,8 @@ export const adminApi = {
 
   async getProducts(): Promise<AdminProduct[]> {
     try {
-      console.log("Intentando obtener productos desde: /api/admin/productos")
-      const response = await adminService.request<any>(`/api/admin/productos`)
+      console.log("Intentando obtener productos desde: /api/inventario")
+      const response = await adminService.request<any>(`/api/inventario`)
 
       // Transformar la respuesta al formato esperado
       let products: any[] = []

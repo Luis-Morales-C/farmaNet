@@ -51,7 +51,7 @@ export interface ListaUsuariosResponseDTO {
 
 export interface PerfilUsuarioDTO extends UsuarioDetalleDTO {}
 
-const API_BASE_URL = "http://localhost:8080/api/usuarios"
+const API_BASE_URL = "http://localhost:8080/api/admin/usuarios"
 
 // Función auxiliar para obtener token
 const getToken = () => {
@@ -142,7 +142,37 @@ export const usuariosService = {
    * GET /api/usuarios/admin/lista
    */
   async listarUsuarios(): Promise<ListaUsuariosResponseDTO> {
-    return fetchWithAuth(`${API_BASE_URL}/admin/lista`)
+    const response = await fetchWithAuth(`${API_BASE_URL}`)
+    
+    // Asegurarse de que la respuesta tenga el formato correcto
+    if (!response) {
+      return { usuarios: [], total: 0 }
+    }
+    
+    // Manejar el formato de respuesta del backend: { success, mensaje, data: { usuarios, total }, error }
+    if (response.data) {
+      const { usuarios, total } = response.data;
+      return {
+        usuarios: Array.isArray(usuarios) ? usuarios : [],
+        total: total || (Array.isArray(usuarios) ? usuarios.length : 0)
+      }
+    }
+    
+    // Si la respuesta es un array directamente, adaptarlo al formato esperado
+    if (Array.isArray(response)) {
+      return { usuarios: response, total: response.length }
+    }
+    
+    // Si ya tiene el formato correcto, devolverlo
+    if (response.usuarios) {
+      return {
+        usuarios: Array.isArray(response.usuarios) ? response.usuarios : [],
+        total: response.total || response.usuarios.length || 0
+      }
+    }
+    
+    // Si no coincide con ninguno de los formatos esperados
+    return { usuarios: [], total: 0 }
   },
 
   /**
@@ -158,7 +188,37 @@ export const usuariosService = {
    * GET /api/usuarios/admin/buscar?termino=nombre
    */
   async buscarUsuarios(termino: string): Promise<ListaUsuariosResponseDTO> {
-    return fetchWithAuth(`${API_BASE_URL}/admin/buscar?termino=${encodeURIComponent(termino)}`)
+    const response = await fetchWithAuth(`${API_BASE_URL}/buscar?termino=${encodeURIComponent(termino)}`)
+    
+    // Asegurarse de que la respuesta tenga el formato correcto
+    if (!response) {
+      return { usuarios: [], total: 0 }
+    }
+    
+    // Manejar el formato de respuesta del backend: { success, mensaje, data: { usuarios, total }, error }
+    if (response.data) {
+      const { usuarios, total } = response.data;
+      return {
+        usuarios: Array.isArray(usuarios) ? usuarios : [],
+        total: total || (Array.isArray(usuarios) ? usuarios.length : 0)
+      }
+    }
+    
+    // Si la respuesta es un array directamente, adaptarlo al formato esperado
+    if (Array.isArray(response)) {
+      return { usuarios: response, total: response.length }
+    }
+    
+    // Si ya tiene el formato correcto, devolverlo
+    if (response.usuarios) {
+      return {
+        usuarios: Array.isArray(response.usuarios) ? response.usuarios : [],
+        total: response.total || response.usuarios.length || 0
+      }
+    }
+    
+    // Si no coincide con ninguno de los formatos esperados
+    return { usuarios: [], total: 0 }
   },
 
   /**
@@ -166,7 +226,12 @@ export const usuariosService = {
    * GET /api/usuarios/admin/detalles/{id}
    */
   async obtenerDetallesUsuario(userId: string): Promise<UsuarioDetalleDTO> {
-    return fetchWithAuth(`${API_BASE_URL}/admin/detalles/${userId}`)
+    const response = await fetchWithAuth(`${API_BASE_URL}/detalles/${userId}`)
+    // Manejar el formato de respuesta del backend: { success, mensaje, data, error }
+    if (response.data) {
+      return response.data;
+    }
+    return response;
   },
 
   /**
@@ -177,10 +242,15 @@ export const usuariosService = {
     userId: string,
     datos: ActualizarUsuarioAdminDTO
   ): Promise<PerfilUsuarioDTO> {
-    return fetchWithAuth(`${API_BASE_URL}/admin/${userId}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/${userId}`, {
       method: "PUT",
       body: JSON.stringify(datos),
     })
+    // Manejar el formato de respuesta del backend: { success, mensaje, data, error }
+    if (response.data) {
+      return response.data;
+    }
+    return response;
   },
 
   /**
@@ -188,9 +258,11 @@ export const usuariosService = {
    * PUT /api/usuarios/admin/{id}/desactivar
    */
   async desactivarUsuario(userId: string): Promise<void> {
-    await fetchWithAuth(`${API_BASE_URL}/admin/${userId}/desactivar`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/${userId}/desactivar`, {
       method: "PUT",
     })
+    // Manejar el formato de respuesta del backend: { success, mensaje, data, error }
+    return response.data || response;
   },
 
   /**
@@ -198,8 +270,10 @@ export const usuariosService = {
    * PUT /api/usuarios/admin/{id}/activar
    */
   async activarUsuario(userId: string): Promise<void> {
-    await fetchWithAuth(`${API_BASE_URL}/admin/${userId}/activar`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/${userId}/activar`, {
       method: "PUT",
     })
+    // Manejar el formato de respuesta del backend: { success, mensaje, data, error }
+    return response.data || response;
   },
 }
